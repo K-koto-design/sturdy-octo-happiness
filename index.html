@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AetherOS Simulator (iOS 26 Concept)</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                    },
+                    colors: {
+                        ios: {
+                            blue: '#007AFF',
+                            green: '#34C759',
+                            red: '#FF3B30',
+                            gray: '#8E8E93',
+                            bg: '#F2F2F7',
+                            darkBg: '#000000'
+                        }
+                    },
+                    backgroundImage: {
+                        'wallpaper': "url('https://images.unsplash.com/photo-1696428864703-a2267605d8f4?q=80&w=1974&auto=format&fit=crop')",
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* iOS-like Smoothness */
+        body { margin: 0; background-color: #111; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+        
+        /* Device Bezel & Shadow */
+        .device-frame {
+            box-shadow: 0 0 0 10px #333, 0 0 0 12px #000, 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        /* Scrollbar Hiding */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Animations */
+        .app-enter { animation: appPopup 0.4s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
+        .app-exit { animation: appClose 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
+        
+        @keyframes appPopup {
+            from { transform: scale(0.8); opacity: 0; border-radius: 3rem; }
+            to { transform: scale(1); opacity: 1; border-radius: 0; }
+        }
+        @keyframes appClose {
+            from { transform: scale(1); opacity: 1; border-radius: 0; }
+            to { transform: translate(0, 100%); opacity: 1; border-radius: 3rem; }
+        }
+
+        .screen-on { animation: wake 0.2s ease-out; }
+        @keyframes wake { from { opacity: 0; } to { opacity: 1; }}
+
+        /* Glassmorphism */
+        .glass { background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        .glass-dark { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+    </style>
+</head>
+<body>
+
+    <div id="device" class="device-frame relative w-[375px] h-[812px] bg-black rounded-[3.5rem] overflow-hidden border-[8px] border-zinc-900 ring-4 ring-zinc-800">
+        
+        <div id="screen" class="relative w-full h-full bg-wallpaper bg-cover bg-center transition-all duration-300 text-white screen-on overflow-hidden">
+            
+            <div class="absolute top-0 w-full h-12 flex justify-between items-center px-6 z-50 text-sm font-medium pt-2">
+                <span id="clock-status">9:41</span>
+                <div class="flex gap-2 items-center">
+                    <i data-lucide="signal" class="w-4 h-4"></i>
+                    <i data-lucide="wifi" class="w-4 h-4"></i>
+                    <i data-lucide="battery" class="w-5 h-5"></i>
+                </div>
+            </div>
+
+            <div class="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-8 bg-black rounded-full z-50 flex items-center justify-center transition-all duration-300 cursor-pointer hover:w-40 hover:h-10">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse ml-auto mr-3 hidden" id="camera-dot"></div>
+            </div>
+
+            <div id="lock-screen" class="absolute inset-0 z-40 flex flex-col items-center pt-24 backdrop-blur-sm transition-transform duration-500 bg-black/20" onclick="Kernel.unlock()">
+                <div class="flex flex-col items-center mt-4">
+                    <i data-lucide="lock" class="w-6 h-6 mb-2 opacity-80"></i>
+                    <h1 id="clock-lock" class="text-7xl font-light tracking-tighter">9:41</h1>
+                    <p id="date-lock" class="text-xl font-medium mt-1 opacity-90">Tuesday, June 6</p>
+                </div>
+
+                <div class="mt-8 w-[90%] space-y-2">
+                    <div class="glass p-3 rounded-2xl flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-black"><i data-lucide="message-square" class="w-6 h-6"></i></div>
+                        <div>
+                            <h4 class="font-bold text-sm">Messages</h4>
+                            <p class="text-xs opacity-90">Mom: Don't forget dinner!</p>
+                        </div>
+                        <span class="ml-auto text-xs opacity-60">Now</span>
+                    </div>
+                </div>
+
+                <div class="mt-auto mb-8 flex flex-col items-center animate-bounce">
+                    <span class="text-xs font-semibold opacity-80">Swipe up to unlock</span>
+                    <div class="w-1/3 h-1 bg-white rounded-full mt-4 opacity-50"></div>
+                </div>
+                
+                <div class="absolute bottom-12 w-full px-12 flex justify-between">
+                    <div class="w-12 h-12 glass rounded-full flex items-center justify-center active:bg-white/40 transition"><i data-lucide="flashlight" class="w-6 h-6"></i></div>
+                    <div class="w-12 h-12 glass rounded-full flex items-center justify-center active:bg-white/40 transition"><i data-lucide="camera" class="w-6 h-6"></i></div>
+                </div>
+            </div>
+
+            <div id="home-screen" class="absolute inset-0 z-30 pt-16 px-5 transition-transform duration-500 scale-90 opacity-0 pointer-events-none">
+                <div class="grid grid-cols-4 gap-y-6 gap-x-4 mt-4" id="app-grid">
+                    </div>
+                
+                <div class="absolute bottom-6 left-4 right-4 h-24 glass rounded-[2.5rem] flex items-center justify-around px-2 mb-2">
+                     <div onclick="Kernel.openApp('phone')" class="w-14 h-14 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition"><i data-lucide="phone" class="text-white w-7 h-7"></i></div>
+                     <div onclick="Kernel.openApp('safari')" class="w-14 h-14 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition"><i data-lucide="globe" class="text-white w-7 h-7"></i></div>
+                     <div onclick="Kernel.openApp('messages')" class="w-14 h-14 bg-green-400 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition"><i data-lucide="message-square" class="text-white w-7 h-7"></i></div>
+                     <div onclick="Kernel.openApp('music')" class="w-14 h-14 bg-red-500 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition"><i data-lucide="music" class="text-white w-7 h-7"></i></div>
+                </div>
+            </div>
+
+            <div id="app-layer" class="absolute inset-0 z-40 bg-white text-black hidden flex-col">
+                </div>
+
+            <div id="home-indicator" class="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1.5 bg-white/50 rounded-full z-50 cursor-pointer hover:bg-white transition-colors" onclick="Kernel.goHome()"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration & State ---
+        const System = {
+            state: {
+                locked: true,
+                activeApp: null,
+                darkMode: false
+            },
+            apps: [
+                { id: 'settings', name: 'Settings', icon: 'settings', color: 'bg-gray-500', component: renderSettings },
+                { id: 'calculator', name: 'Calc', icon: 'calculator', color: 'bg-black', component: renderCalculator },
+                { id: 'photos', name: 'Photos', icon: 'image', color: 'bg-white text-blue-500', component: renderPlaceholder },
+                { id: 'camera', name: 'Camera', icon: 'camera', color: 'bg-gray-800', component: renderCamera },
+                { id: 'mail', name: 'Mail', icon: 'mail', color: 'bg-blue-400', component: renderPlaceholder },
+                { id: 'notes', name: 'Notes', icon: 'file-text', color: 'bg-yellow-400', component: renderPlaceholder },
+                { id: 'appstore', name: 'App Store', icon: 'shopping-bag', color: 'bg-blue-600', component: renderPlaceholder },
+                { id: 'wallet', name: 'Wallet', icon: 'credit-card', color: 'bg-black', component: renderPlaceholder },
+            ]
+        };
+
+        // --- DOM Elements ---
+        const lockScreen = document.getElementById('lock-screen');
+        const homeScreen = document.getElementById('home-screen');
+        const appLayer = document.getElementById('app-layer');
+        const appGrid = document.getElementById('app-grid');
+        const homeIndicator = document.getElementById('home-indicator');
+
+        // --- Kernel Methods ---
+        const Kernel = {
+            init() {
+                this.startClock();
+                this.renderGrid();
+                lucide.createIcons();
+            },
+
+            unlock() {
+                System.state.locked = false;
+                lockScreen.style.transform = 'translateY(-100%)';
+                
+                // Show Home Screen
+                homeScreen.classList.remove('scale-90', 'opacity-0', 'pointer-events-none');
+                homeScreen.classList.add('scale-100', 'opacity-100');
+            },
+
+            lock() {
+                System.state.locked = true;
+                lockScreen.style.transform = 'translateY(0)';
+                homeScreen.classList.add('scale-90', 'opacity-0', 'pointer-events-none');
+                this.closeApp(false); // Close app without animation if locking
+            },
+
+            openApp(appId) {
+                if(System.state.locked) return;
+
+                const app = System.apps.find(a => a.id === appId) || { 
+                    id: appId, 
+                    name: appId.charAt(0).toUpperCase() + appId.slice(1), 
+                    component: renderPlaceholder 
+                };
+
+                System.state.activeApp = app.id;
+                
+                // Render App Content
+                appLayer.innerHTML = app.component(app);
+                appLayer.className = "absolute inset-0 z-40 bg-white text-black flex flex-col app-enter overflow-hidden";
+                
+                // Dark Mode Check for App Container
+                if(System.state.darkMode || ['calculator', 'stock', 'camera'].includes(appId)) {
+                    appLayer.classList.add('bg-black', 'text-white');
+                    appLayer.classList.remove('bg-white', 'text-black');
+                    homeIndicator.classList.replace('bg-black/20', 'bg-white/50');
+                } else {
+                    homeIndicator.classList.replace('bg-white/50', 'bg-black/20');
+                }
+
+                // Inject Icons inside new HTML
+                lucide.createIcons();
+            },
+
+            goHome() {
+                if (System.state.activeApp) {
+                    // Animate Close
+                    appLayer.classList.remove('app-enter');
+                    appLayer.classList.add('app-exit');
+                    
+                    setTimeout(() => {
+                        appLayer.classList.add('hidden');
+                        appLayer.innerHTML = '';
+                        System.state.activeApp = null;
+                        
+                        // Reset Indicator color
+                        homeIndicator.classList.replace('bg-black/20', 'bg-white/50');
+                    }, 300);
+                }
+            },
+
+            closeApp(animate = true) {
+                if(animate) this.goHome();
+                else {
+                    appLayer.classList.add('hidden');
+                    System.state.activeApp = null;
+                }
+            },
+
+            toggleTheme() {
+                System.state.darkMode = !System.state.darkMode;
+                document.documentElement.classList.toggle('dark');
+            },
+
+            startClock() {
+                const update = () => {
+                    const now = new Date();
+                    const time = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: false });
+                    const date = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+                    
+                    document.getElementById('clock-status').innerText = time;
+                    document.getElementById('clock-lock').innerText = time;
+                    document.getElementById('date-lock').innerText = date;
+                };
+                update();
+                setInterval(update, 1000);
+            },
+
+            renderGrid() {
+                appGrid.innerHTML = System.apps.map(app => `
+                    <div class="flex flex-col items-center gap-1 group cursor-pointer" onclick="Kernel.openApp('${app.id}')">
+                        <div class="w-[60px] h-[60px] ${app.color} rounded-2xl flex items-center justify-center text-white shadow-md group-active:scale-90 transition-transform">
+                            <i data-lucide="${app.icon}" class="w-8 h-8"></i>
+                        </div>
+                        <span class="text-[11px] text-white font-medium drop-shadow-md">${app.name}</span>
+                    </div>
+                `).join('');
+            }
+        };
+
+        // --- App Renderers (The "Files") ---
+
+        function renderPlaceholder(app) {
+            return `
+                <div class="flex flex-col h-full items-center justify-center">
+                    <h1 class="text-2xl font-bold mb-2">${app.name}</h1>
+                    <p class="text-gray-500">Coming soon in iOS 26</p>
+                </div>
+            `;
+        }
+
+        function renderSettings() {
+            const isDark = System.state.darkMode;
+            return `
+                <div class="h-full bg-[#f2f2f7] dark:bg-black overflow-y-auto">
+                    <div class="p-4 pt-12">
+                        <h1 class="text-3xl font-bold mb-6 px-2 dark:text-white">Settings</h1>
+                        
+                        <div class="bg-white dark:bg-[#1c1c1e] rounded-xl p-4 flex items-center gap-4 mb-8">
+                            <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-400 to-purple-600"></div>
+                            <div>
+                                <h2 class="text-xl font-medium dark:text-white">Guest User</h2>
+                                <p class="text-sm text-gray-500">Apple ID, iCloud+</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white dark:bg-[#1c1c1e] rounded-xl overflow-hidden">
+                             <div class="flex items-center justify-between p-4 border-b dark:border-gray-800 cursor-pointer active:bg-gray-50" onclick="Kernel.toggleTheme(); Kernel.openApp('settings')">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center text-white"><i data-lucide="moon" class="w-5 h-5"></i></div>
+                                    <span class="dark:text-white">Dark Mode</span>
+                                </div>
+                                <span class="text-gray-400 text-sm">${isDark ? 'On' : 'Off'}</span>
+                            </div>
+                             <div class="flex items-center justify-between p-4 cursor-pointer active:bg-gray-50" onclick="Kernel.lock()">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center text-white"><i data-lucide="lock" class="w-5 h-5"></i></div>
+                                    <span class="dark:text-white">Lock Screen</span>
+                                </div>
+                                <i data-lucide="chevron-right" class="text-gray-400 w-4 h-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCalculator() {
+            // Self-contained calculator logic injected into global scope for this demo
+            window.calcPress = (val) => {
+                const display = document.getElementById('calc-display');
+                if(val === 'C') display.innerText = '0';
+                else if(val === '=') {
+                    try { display.innerText = eval(display.innerText.replace('×','*').replace('÷','/')); } 
+                    catch { display.innerText = 'Error'; }
+                } 
+                else {
+                    if(display.innerText === '0') display.innerText = val;
+                    else display.innerText += val;
+                }
+            };
+
+            const btns = [
+                ['C', 'bg-gray-300 text-black'], ['±', 'bg-gray-300 text-black'], ['%', 'bg-gray-300 text-black'], ['÷', 'bg-orange-500 text-white'],
+                ['7', 'bg-[#333] text-white'], ['8', 'bg-[#333] text-white'], ['9', 'bg-[#333] text-white'], ['×', 'bg-orange-500 text-white'],
+                ['4', 'bg-[#333] text-white'], ['5', 'bg-[#333] text-white'], ['6', 'bg-[#333] text-white'], ['-', 'bg-orange-500 text-white'],
+                ['1', 'bg-[#333] text-white'], ['2', 'bg-[#333] text-white'], ['3', 'bg-[#333] text-white'], ['+', 'bg-orange-500 text-white'],
+                ['0', 'bg-[#333] text-white col-span-2 w-auto pl-8 items-start rounded-full'], ['.', 'bg-[#333] text-white'], ['=', 'bg-orange-500 text-white'],
+            ];
+
+            return `
+                <div class="h-full bg-black flex flex-col p-4 pb-12">
+                    <div class="flex-1 flex items-end justify-end p-4">
+                        <span id="calc-display" class="text-7xl font-light text-white">0</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-3">
+                        ${btns.map(([lbl, cls]) => `
+                            <button onclick="calcPress('${lbl}')" class="${cls} h-20 w-20 rounded-full text-3xl font-medium flex items-center justify-center active:opacity-70 transition">${lbl}</button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderCamera() {
+            setTimeout(() => {
+                document.getElementById('camera-dot').classList.remove('hidden');
+            }, 500);
+            
+            // Clean up dot when closing (simple hack for this file)
+            const oldGoHome = Kernel.goHome;
+            Kernel.goHome = () => {
+                document.getElementById('camera-dot').classList.add('hidden');
+                oldGoHome();
+                Kernel.goHome = oldGoHome; // restore
+            }
+
+            return `
+                <div class="h-full bg-black relative flex flex-col">
+                     <div class="flex-1 bg-gray-900 m-4 rounded-3xl overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1517483000871-1dbf64a6e1c6?q=80&w=2069&auto=format&fit=crop" class="w-full h-full object-cover opacity-80" />
+                        <div class="absolute bottom-4 left-0 w-full flex justify-center space-x-8 text-yellow-400 font-medium text-xs">
+                            <span>CINEMATIC</span>
+                            <span>VIDEO</span>
+                            <span class="text-white bg-black/50 px-2 rounded-full">PHOTO</span>
+                            <span>PORTRAIT</span>
+                        </div>
+                     </div>
+                     
+                     <div class="h-32 flex items-center justify-between px-8 pb-8">
+                        <div class="w-12 h-12 bg-gray-800 rounded-lg"></div>
+                        <div class="w-20 h-20 border-4 border-white rounded-full p-1 cursor-pointer active:scale-95 transition">
+                            <div class="w-full h-full bg-white rounded-full"></div>
+                        </div>
+                        <div class="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center"><i data-lucide="rotate-ccw" class="text-white"></i></div>
+                     </div>
+                </div>
+            `;
+        }
+
+        // --- Boot ---
+        Kernel.init();
+
+    </script>
+</body>
+</html>
