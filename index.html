@@ -3,415 +3,320 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GOS Pro 2026 | Ultimate Edition</title>
+    <title>GOS 26 Ultimate</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/framer-motion/10.16.4/framer-motion.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
     <style>
         :root {
             --ios-blue: #007AFF;
-            --system-bg: #000000;
-            --app-radius: 44px;
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
         }
 
-        /* Базовые стили слоя */
-        body, html { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            background: #000; overflow: hidden; 
+        * { 
+            -webkit-tap-highlight-color: transparent; 
+            user-select: none; 
+            touch-action: manipulation;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
         }
 
-        #phone-container {
-            position: relative; width: 100%; height: 100dvh;
+        body { background: #000; margin: 0; overflow: hidden; height: 100dvh; color: white; }
+
+        /* Контейнер устройства */
+        #iphone-frame {
+            position: relative;
+            width: 100%; height: 100%;
             max-width: 430px; margin: 0 auto;
-            background: var(--system-bg);
+            background: #000;
             overflow: hidden;
-            box-shadow: 0 0 100px rgba(0,0,0,0.8);
         }
 
-        /* Динамическая челка */
-        #dynamic-island {
-            position: absolute; top: 11px; left: 50%;
-            transform: translateX(-50%);
-            background: #000; color: white;
+        /* Обои с параллаксом */
+        #wallpaper {
+            position: absolute; inset: -20px;
+            background: url('https://images.unsplash.com/photo-1620206343767-7da98185edd4?q=80&w=1920&auto=format&fit=crop') center/cover;
+            z-index: 1; transition: filter 0.5s ease, transform 0.5s ease;
+        }
+        .blur-bg #wallpaper { filter: blur(30px) brightness(0.6); transform: scale(1.1); }
+
+        /* Динамический остров (Smart Logic) */
+        #island {
+            position: absolute; top: calc(11px + var(--safe-top));
+            left: 50%; transform: translateX(-50%);
+            background: #000; z-index: 10000;
             width: 120px; height: 36px; border-radius: 20px;
-            z-index: 10000; transition: all 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            transition: all 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
+            overflow: hidden;
         }
-        #dynamic-island.expanded { width: 360px; height: 200px; border-radius: 45px; }
-        #dynamic-island.pill { width: 200px; }
+        #island.expanded { width: 350px; height: 180px; border-radius: 40px; }
+        #island.notification { width: 350px; height: 75px; border-radius: 30px; }
 
-        /* Система окон приложений */
-        .app-window {
-            position: absolute; inset: 0; background: #fff;
-            z-index: 500; border-radius: var(--app-radius);
-            transform: translateY(110%) scale(0.9);
-            transition: transform 0.6s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s;
-            overflow: hidden; display: none;
-        }
-        .app-window.active { display: block; transform: translateY(0) scale(1); border-radius: 0; }
-        .app-window.minimized { 
-            display: block; transform: translateY(15%) scale(0.8); 
-            filter: brightness(0.5); border-radius: 44px; pointer-events: none;
-        }
-
-        /* Рабочий стол */
+        /* Сетка приложений */
         .home-screen {
-            position: absolute; inset: 0; z-index: 100;
-            background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') center/cover;
-            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.6s;
-            padding-top: 60px;
-        }
-        .home-screen.blur { filter: blur(20px) brightness(0.7); transform: scale(1.1); }
-
-        /* Сетка иконок */
-        .icon-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr);
-            grid-auto-rows: min-content; gap: 25px 16px; padding: 20px;
+            position: relative; z-index: 10;
+            height: 100%; width: 100%;
+            padding-top: calc(70px + var(--safe-top));
+            transition: opacity 0.4s ease, transform 0.4s ease;
         }
 
-        .ios-icon {
-            display: flex; flex-direction: column; align-items: center; gap: 8px;
-            cursor: pointer; transition: transform 0.2s;
+        .app-icon {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            width: 100%; cursor: pointer;
         }
-        .ios-icon:active { transform: scale(0.8); }
-        .icon-shape {
+        .icon-body {
             width: 72px; height: 72px; border-radius: 18px;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            background-size: cover;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            background: white; transition: transform 0.2s;
         }
+        .icon-body:active { transform: scale(0.85); }
+        .icon-label { font-size: 12px; font-weight: 500; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
-        /* Центр управления */
+        /* Система Окон */
+        .app-window {
+            position: absolute; inset: 0; z-index: 5000;
+            background: #fff; border-radius: 44px;
+            transform: translateY(105%);
+            transition: transform 0.5s cubic-bezier(0.3, 1, 0.3, 1);
+            overflow: hidden; color: black;
+        }
+        .app-window.active { transform: translateY(0); border-radius: 0; }
+        
+        /* Control Center */
         #control-center {
             position: absolute; inset: 0; z-index: 9000;
-            background: rgba(0,0,0,0.4); backdrop-filter: blur(50px);
-            transform: translateY(-100%); transition: transform 0.5s cubic-bezier(0.3, 1, 0.3, 1);
-            padding: 80px 30px;
+            background: rgba(0,0,0,0.3); backdrop-filter: blur(45px);
+            transform: translateY(-110%);
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            padding: calc(60px + var(--safe-top)) 25px;
         }
         #control-center.open { transform: translateY(0); }
 
-        /* Многозадачность */
-        #app-switcher {
-            position: absolute; inset: 0; z-index: 8000;
-            background: rgba(0,0,0,0.2); backdrop-filter: blur(20px);
-            display: none; align-items: center; justify-content: center;
-            overflow-x: auto; white-space: nowrap; padding: 0 50px;
+        /* Полоска Home */
+        #home-bar {
+            position: absolute; bottom: 8px; left: 50%;
+            transform: translateX(-50%);
+            width: 135px; height: 5px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 10px; z-index: 10001;
         }
 
-        /* FaceID Overlay */
-        #faceid-overlay {
-            position: absolute; inset: 0; z-index: 20000;
-            background: #000; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; transition: opacity 0.8s;
+        /* Виджеты */
+        .widget-big {
+            grid-column: span 2; grid-row: span 2;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 28px; padding: 20px;
         }
-
-        .glass-card { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); border-radius: 24px; }
     </style>
 </head>
 <body>
 
-<div id="phone-container">
-    <div id="faceid-overlay">
-        <div id="faceid-glyph" class="w-32 h-32 border-4 border-white/20 rounded-full flex items-center justify-center">
-            <i data-lucide="scan-face" class="w-16 h-16 text-white animate-pulse"></i>
+<div id="iphone-frame">
+    <div id="wallpaper"></div>
+
+    <div class="absolute top-0 w-full flex justify-between px-8 pt-4 z-[9999] font-bold text-sm" style="padding-top: calc(10px + var(--safe-top))">
+        <div id="status-time">9:41</div>
+        <div class="flex gap-2">
+            <i data-lucide="signal" class="w-4"></i>
+            <i data-lucide="wifi" class="w-4"></i>
+            <i data-lucide="battery" class="w-4"></i>
         </div>
-        <h2 class="mt-8 text-xl font-medium">Face ID</h2>
     </div>
 
-    <div id="dynamic-island" onclick="GOS.UI.Island.expand()">
-        <div id="island-content" class="w-full h-full opacity-0 flex items-center justify-between px-6">
-            </div>
+    <div id="island" onclick="GOS.Island.toggle()">
+        <div id="island-ui" class="opacity-0 transition-opacity w-full h-full p-4 flex items-center"></div>
     </div>
 
     <div id="control-center">
         <div class="grid grid-cols-2 gap-4">
-            <div class="glass-card p-4 grid grid-cols-2 gap-4">
-                <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center"><i data-lucide="wifi" class="w-6"></i></div>
-                <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center"><i data-lucide="bluetooth" class="w-6"></i></div>
-                <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center"><i data-lucide="signal" class="w-6"></i></div>
-                <div class="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center"><i data-lucide="plane" class="w-6"></i></div>
+            <div class="bg-white/10 p-4 rounded-3xl grid grid-cols-2 gap-4">
+                <div class="cc-btn bg-blue-500 rounded-full w-12 h-12 flex items-center justify-center"><i data-lucide="wifi"></i></div>
+                <div class="cc-btn bg-green-500 rounded-full w-12 h-12 flex items-center justify-center"><i data-lucide="signal"></i></div>
+                <div class="cc-btn bg-blue-600 rounded-full w-12 h-12 flex items-center justify-center"><i data-lucide="bluetooth"></i></div>
+                <div class="cc-btn bg-orange-500 rounded-full w-12 h-12 flex items-center justify-center"><i data-lucide="plane"></i></div>
             </div>
-            <div class="glass-card p-4 flex items-center justify-around">
-                <i data-lucide="moon" class="w-8 text-purple-400"></i>
-                <i data-lucide="flashlight" class="w-8"></i>
+            <div class="bg-white/10 p-4 rounded-3xl flex flex-col justify-between">
+                <div class="flex justify-between"><i data-lucide="moon"></i><i data-lucide="cast"></i></div>
+                <p class="text-[10px] font-bold opacity-50 uppercase">Focus</p>
             </div>
-            <div class="glass-card h-40 flex items-end p-2">
-                <div class="w-full bg-white/20 rounded-xl h-full relative overflow-hidden">
-                    <div class="absolute bottom-0 w-full bg-white h-2/3"></div>
-                    <i data-lucide="sun" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-black/50"></i>
-                </div>
+            <div class="h-44 bg-white/10 rounded-3xl relative overflow-hidden">
+                <div class="absolute bottom-0 w-full bg-white h-2/3"></div>
+                <i data-lucide="sun" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-black/40"></i>
             </div>
-            <div class="glass-card h-40 flex items-end p-2">
-                <div class="w-full bg-white/20 rounded-xl h-full relative overflow-hidden">
-                    <div class="absolute bottom-0 w-full bg-white h-1/2"></div>
-                    <i data-lucide="volume-2" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-black/50"></i>
-                </div>
+            <div class="h-44 bg-white/10 rounded-3xl relative overflow-hidden">
+                <div class="absolute bottom-0 w-full bg-white h-1/2"></div>
+                <i data-lucide="volume-2" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-black/40"></i>
             </div>
         </div>
     </div>
 
-    <div class="home-screen" id="home-screen">
-        <div class="px-8 mt-4 mb-8">
-            <div class="glass-card p-4 flex items-center gap-4 border-none bg-white/20" onclick="GOS.UI.openSpotlight()">
-                <i data-lucide="search" class="w-5 text-white/70"></i>
-                <span class="text-white/70">Поиск в Google</span>
+    <div id="home-screen" class="home-screen overflow-y-auto">
+        <div class="grid grid-cols-4 gap-y-8 px-5" id="app-grid">
+            <div class="widget-big mb-4 flex flex-col justify-between">
+                <div><p class="text-xs font-bold opacity-60 uppercase">Weather</p><h2 class="text-3xl font-light">24°</h2></div>
+                <p class="text-xs">Mostly Clear</p>
             </div>
-        </div>
-        
-        <div id="main-grid" class="icon-grid">
             </div>
-
-        <div class="absolute bottom-6 left-4 right-4 h-24 glass-card rounded-[35px] flex items-center justify-around px-4">
-            <div class="ios-icon" onclick="GOS.Core.launchApp('phone')"><div class="icon-shape bg-green-500"><i data-lucide="phone" class="text-white w-9"></i></div></div>
-            <div class="ios-icon" onclick="GOS.Core.launchApp('safari')"><div class="icon-shape bg-white"><img src="https://upload.wikimedia.org/wikipedia/commons/5/52/Safari_browser_logo.svg" class="w-12"></div></div>
-            <div class="ios-icon" onclick="GOS.Core.launchApp('kstore')"><div class="icon-shape bg-blue-600"><i data-lucide="shopping-bag" class="text-white w-9"></i></div></div>
-            <div class="ios-icon" onclick="GOS.Core.launchApp('music')"><div class="icon-shape bg-gradient-to-br from-pink-500 to-red-500"><i data-lucide="music" class="text-white w-9"></i></div></div>
-        </div>
     </div>
 
-    <div id="apps-container"></div>
-
-    <div id="home-bar" class="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1.5 bg-white/50 rounded-full z-[10000] cursor-pointer" 
-         onmousedown="GOS.Core.startHomeGesture(event)"></div>
+    <div id="app-layer"></div>
+    <div id="home-bar" onclick="GOS.System.goHome()"></div>
 </div>
-
 <script>
-/**
- * GOS 2026 KERNEL - ОБЪЕКТНО-ОРИЕНТИРОВАННОЕ ЯДРО
- */
 const GOS = {
-    state: {
-        isLocked: true,
+    apps: [
+        { id: 'settings', name: 'Настройки', icon: 'settings', color: 'bg-gray-500', content: () => GOS.Views.Settings() },
+        { id: 'kstore', name: 'K-Store', icon: 'shopping-bag', color: 'bg-blue-600', content: () => GOS.Views.Store() },
+        { id: 'safari', name: 'Safari', icon: 'compass', color: 'bg-white text-blue-500', content: () => GOS.Views.Browser() },
+        { id: 'photos', name: 'Фото', icon: 'image', color: 'bg-white text-pink-500', content: () => GOS.Views.Photos() },
+        { id: 'files', name: 'Файлы', icon: 'folder', color: 'bg-white text-blue-600', content: () => `<div>Files</div>` }
+    ],
+
+    System: {
         activeApp: null,
-        runningApps: [],
-        battery: 88,
-        version: "26.1.0",
-        installedApps: [
-            { id: 'settings', name: 'Настройки', icon: 'settings', color: 'bg-gray-500' },
-            { id: 'weather', name: 'Погода', icon: 'cloud-sun', color: 'bg-sky-400' },
-            { id: 'photos', name: 'Фото', icon: 'image', color: 'bg-white text-blue-500' },
-            { id: 'notes', name: 'Заметки', icon: 'edit-3', color: 'bg-orange-400' },
-            { id: 'files', name: 'Файлы', icon: 'folder', color: 'bg-white text-blue-600' },
-            { id: 'maps', name: 'Карты', icon: 'map', color: 'bg-green-500' },
-            { id: 'camera', name: 'Камера', icon: 'camera', color: 'bg-zinc-800' }
-        ]
-    },
-
-    Core: {
-        boot() {
+        init() {
+            this.renderApps();
+            this.updateClock();
+            setInterval(() => this.updateClock(), 1000);
             lucide.createIcons();
-            setTimeout(() => this.runFaceID(), 1000);
-            this.renderHomeGrid();
-            this.initSystemTime();
-        },
-
-        runFaceID() {
-            const overlay = document.getElementById('faceid-overlay');
-            const glyph = document.getElementById('faceid-glyph');
             
-            // Имитация сканирования
-            setTimeout(() => {
-                glyph.style.borderColor = "#4ade80";
-                glyph.innerHTML = '<i data-lucide="check" class="w-16 h-16 text-green-400"></i>';
-                lucide.createIcons();
-                
-                setTimeout(() => {
-                    overlay.style.opacity = '0';
-                    setTimeout(() => overlay.remove(), 800);
-                    GOS.state.isLocked = false;
-                    GOS.UI.Island.notify("GOS Pro", "FaceID подтвержден", "lock-open");
-                }, 500);
-            }, 1500);
+            // Детектор свайпа для CC
+            let startY = 0;
+            document.addEventListener('touchstart', e => startY = e.touches[0].clientY);
+            document.addEventListener('touchend', e => {
+                let endY = e.changedTouches[0].clientY;
+                if(startY < 100 && endY > startY + 50) GOS.UI.toggleCC(true);
+            });
         },
 
-        launchApp(id) {
-            const container = document.getElementById('apps-container');
-            let appEl = document.getElementById(`app-${id}`);
-
-            if (!appEl) {
-                appEl = document.createElement('div');
-                appEl.id = `app-${id}`;
-                appEl.className = 'app-window';
-                appEl.innerHTML = GOS.AppFactory.create(id);
-                container.appendChild(appEl);
-                if (!GOS.state.runningApps.includes(id)) GOS.state.runningApps.push(id);
-            }
-
-            document.getElementById('home-screen').classList.add('blur');
-            appEl.style.display = 'block';
-            setTimeout(() => {
-                appEl.classList.add('active');
-                GOS.state.activeApp = id;
-                lucide.createIcons();
-            }, 50);
-        },
-
-        closeActiveApp() {
-            if (!GOS.state.activeApp) return;
-            const appEl = document.getElementById(`app-${GOS.state.activeApp}`);
-            appEl.classList.remove('active');
-            document.getElementById('home-screen').classList.remove('blur');
-            setTimeout(() => {
-                appEl.style.display = 'none';
-                GOS.state.activeApp = null;
-            }, 600);
-        },
-
-        renderHomeGrid() {
-            const grid = document.getElementById('main-grid');
-            grid.innerHTML = GOS.state.installedApps.map(app => `
-                <div class="ios-icon" onclick="GOS.Core.launchApp('${app.id}')">
-                    <div class="icon-shape ${app.color} shadow-lg">
-                        <i data-lucide="${app.icon}" class="${app.color.includes('white') ? '' : 'text-white'} w-9"></i>
-                    </div>
-                    <span class="text-white text-[12px] font-medium tracking-wide">${app.name}</span>
+        renderApps() {
+            const grid = document.getElementById('app-grid');
+            grid.innerHTML += GOS.apps.map(app => `
+                <div class="app-icon" onclick="GOS.System.launch('${app.id}')">
+                    <div class="icon-body ${app.color}"><i data-lucide="${app.icon}"></i></div>
+                    <span class="icon-label">${app.name}</span>
                 </div>
             `).join('');
         },
 
-        initSystemTime() {
-            // Реализация обновления времени во всех виджетах
+        launch(id) {
+            const app = GOS.apps.find(a => a.id === id);
+            const layer = document.getElementById('app-layer');
+            let win = document.getElementById(`win-${id}`);
+            
+            if(!win) {
+                win = document.createElement('div');
+                win.id = `win-${id}`;
+                win.className = 'app-window';
+                win.innerHTML = app.content();
+                layer.appendChild(win);
+            }
+
+            document.body.classList.add('blur-bg');
+            setTimeout(() => {
+                win.classList.add('active');
+                lucide.createIcons();
+            }, 10);
+            this.activeApp = id;
+        },
+
+        goHome() {
+            if(!this.activeApp) return;
+            const win = document.getElementById(`win-${this.activeApp}`);
+            win.classList.remove('active');
+            document.body.classList.remove('blur-bg');
+            document.getElementById('control-center').classList.remove('open');
+            this.activeApp = null;
+        },
+
+        updateClock() {
+            const now = new Date();
+            document.getElementById('status-time').innerText = now.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
         }
     },
 
     UI: {
-        Island: {
-            state: 'idle',
-            notify(title, msg, icon) {
-                const island = document.getElementById('dynamic-island');
-                const content = document.getElementById('island-content');
-                
-                island.classList.add('pill');
-                content.classList.remove('opacity-0');
-                content.innerHTML = `
-                    <div class="flex items-center gap-3 w-full">
-                        <i data-lucide="${icon}" class="w-4 h-4 text-ios-blue"></i>
-                        <span class="text-xs font-bold truncate">${title}: ${msg}</span>
-                    </div>
-                `;
-                lucide.createIcons();
-                
-                setTimeout(() => {
-                    island.classList.remove('pill');
-                    content.classList.add('opacity-0');
-                }, 3000);
-            },
-            expand() {
-                const island = document.getElementById('dynamic-island');
-                const content = document.getElementById('island-content');
-                
-                if(this.state === 'idle') {
-                    island.classList.add('expanded');
-                    content.classList.remove('opacity-0');
-                    content.innerHTML = `
-                        <div class="flex flex-col w-full p-4 h-full">
-                            <div class="flex justify-between items-center mb-6">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-14 h-14 bg-zinc-800 rounded-2xl flex items-center justify-center">
-                                        <i data-lucide="music" class="text-pink-500 w-8"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-bold">Blinding Lights</p>
-                                        <p class="text-sm opacity-50">The Weeknd</p>
-                                    </div>
-                                </div>
-                                <div class="flex gap-1 items-end h-8">
-                                    <div class="w-1.5 bg-green-400 animate-bounce h-4"></div>
-                                    <div class="w-1.5 bg-green-400 animate-bounce h-7" style="animation-delay: 0.1s"></div>
-                                    <div class="w-1.5 bg-green-400 animate-bounce h-5" style="animation-delay: 0.2s"></div>
-                                </div>
-                            </div>
-                            <div class="flex justify-around items-center">
-                                <i data-lucide="skip-back" class="w-8"></i>
-                                <i data-lucide="pause" class="w-10 fill-white"></i>
-                                <i data-lucide="skip-forward" class="w-8"></i>
-                            </div>
-                        </div>
-                    `;
-                    lucide.createIcons();
-                    this.state = 'expanded';
-                } else {
-                    island.classList.remove('expanded');
-                    content.classList.add('opacity-0');
-                    this.state = 'idle';
-                }
-            }
-        },
-        toggleCC() {
-            document.getElementById('control-center').classList.toggle('open');
+        toggleCC(show) {
+            document.getElementById('control-center').classList.toggle('open', show);
         }
     },
 
-    AppFactory: {
-        create(id) {
-            // Масштабируемый генератор контента приложений
-            const templates = {
-                settings: `
-                    <div class="h-full bg-[#F2F2F7] overflow-y-auto pb-20">
-                        <div class="pt-16 px-6 mb-6 flex justify-between items-end">
-                            <h1 class="text-4xl font-bold text-black">Настройки</h1>
-                        </div>
-                        <div class="px-4 space-y-6 text-black">
-                            <div class="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-                                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-2xl">A</div>
-                                <div class="flex-1">
-                                    <h3 class="font-bold">Александр GOS</h3>
-                                    <p class="text-xs text-gray-400">G-ID, Облако, Контент и Покупки</p>
-                                </div>
-                                <i data-lucide="chevron-right" class="text-gray-300"></i>
-                            </div>
-                            <div class="bg-white rounded-2xl overflow-hidden shadow-sm">
-                                <div class="p-4 border-b flex justify-between items-center active:bg-gray-100" onclick="GOS.UI.Island.notify('System', 'Обновление ПО не требуется', 'refresh-cw')">
-                                    <div class="flex items-center gap-3"><div class="w-7 h-7 bg-orange-500 rounded flex items-center justify-center text-white"><i data-lucide="refresh-cw" class="w-4"></i></div><span>Обновление ПО</span></div>
-                                    <i data-lucide="chevron-right" class="text-gray-300 w-4"></i>
-                                </div>
-                                <div class="p-4 flex justify-between items-center active:bg-gray-100">
-                                    <div class="flex items-center gap-3"><div class="w-7 h-7 bg-blue-500 rounded flex items-center justify-center text-white"><i data-lucide="info" class="w-4"></i></div><span>Об устройстве</span></div>
-                                    <span class="text-gray-400 text-sm">GOS 26.1 ></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`,
-                kstore: `
-                    <div class="h-full bg-white overflow-y-auto">
-                        <div class="pt-16 px-6 flex justify-between items-end mb-6">
-                            <h1 class="text-4xl font-extrabold text-black">K-Store</h1>
-                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">A</div>
-                        </div>
-                        <div class="px-6 space-y-8 pb-24">
-                            <div class="relative w-full h-96 rounded-[40px] overflow-hidden shadow-2xl">
-                                <img src="https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=1000" class="w-full h-full object-cover">
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 p-8 flex flex-col justify-end">
-                                    <p class="text-blue-400 font-bold text-xs mb-2">ПРИЛОЖЕНИЕ ДНЯ</p>
-                                    <h2 class="text-3xl text-white font-bold">Neural Canvas AI</h2>
-                                    <p class="text-white/60 text-sm mt-2">Рисуйте нейросетями в 8K</p>
-                                    <button class="mt-4 bg-white text-black py-2 px-6 rounded-full font-bold w-max" onclick="GOS.UI.Island.notify('K-Store', 'Загрузка началась...', 'download-cloud')">ЗАГРУЗИТЬ</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`,
-                placeholder: (id) => `<div class="h-full flex flex-col items-center justify-center bg-gray-50 text-black">
-                    <i data-lucide="layers" class="w-20 h-20 text-blue-500 opacity-20 mb-4"></i>
-                    <h2 class="text-2xl font-bold uppercase">${id}</h2>
-                    <p class="text-gray-400 mt-2">Модуль в разработке</p>
-                </div>`
-            };
-            return templates[id] || templates.placeholder(id);
+    Island: {
+        state: 'closed',
+        toggle() {
+            const isl = document.getElementById('island');
+            const ui = document.getElementById('island-ui');
+            if(this.state === 'closed') {
+                isl.classList.add('expanded');
+                ui.classList.replace('opacity-0', 'opacity-1');
+                ui.innerHTML = `
+                    <div class="flex-1 flex items-center gap-4">
+                        <div class="w-16 h-16 bg-zinc-800 rounded-2xl flex items-center justify-center"><i data-lucide="music" class="text-pink-500"></i></div>
+                        <div><p class="font-bold text-white">Apple Music</p><p class="text-xs text-gray-400">The Weeknd - Blinding Lights</p></div>
+                    </div>
+                `;
+                this.state = 'open';
+            } else {
+                isl.classList.remove('expanded');
+                ui.classList.replace('opacity-1', 'opacity-0');
+                this.state = 'closed';
+            }
+            lucide.createIcons();
         }
+    },
+
+    Views: {
+        Settings: () => `
+            <div class="h-full bg-[#F2F2F7] p-6 pt-16 overflow-y-auto">
+                <h1 class="text-3xl font-extrabold mb-6">Настройки</h1>
+                <div class="bg-white rounded-2xl p-4 flex items-center gap-4 mb-8 shadow-sm">
+                    <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white text-2xl font-bold">A</div>
+                    <div><h2 class="font-bold">Apple ID</h2><p class="text-xs text-gray-400">iCloud, Media & Purchases</p></div>
+                </div>
+                <div class="bg-white rounded-2xl overflow-hidden shadow-sm">
+                    <div class="p-4 border-b flex justify-between"><span>Авиарежим</span><i data-lucide="chevron-right" class="text-gray-300"></i></div>
+                    <div class="p-4 border-b flex justify-between"><span>Wi-Fi</span><span class="text-gray-400 text-sm">Home_5G ></span></div>
+                    <div class="p-4 border-b flex justify-between"><span>Bluetooth</span><span class="text-gray-400 text-sm">On ></span></div>
+                    <div class="p-4 flex justify-between"><span>Уведомления</span><i data-lucide="chevron-right" class="text-gray-300"></i></div>
+                </div>
+                <div class="mt-8 bg-white rounded-2xl p-4 flex justify-between items-center text-red-500 font-medium">Выйти из G-ID</div>
+            </div>`,
+        Store: () => `
+            <div class="h-full bg-white flex flex-col">
+                <div class="pt-16 px-6 pb-4 flex justify-between items-end">
+                    <h1 class="text-4xl font-extrabold">K-Store</h1>
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">G</div>
+                </div>
+                <div class="flex-1 p-6 space-y-8 overflow-y-auto">
+                    <div class="relative h-96 rounded-[40px] overflow-hidden shadow-2xl">
+                        <img src="https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=1000" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 p-8 flex flex-col justify-end">
+                            <p class="text-blue-400 font-bold text-xs uppercase mb-2">Editor's Choice</p>
+                            <h3 class="text-white text-3xl font-bold">Lumina Pro</h3>
+                            <button class="mt-4 bg-white/20 backdrop-blur-md text-white px-6 py-2 rounded-full font-bold self-start">GET</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`,
+        Browser: () => `<div class="h-full pt-12"><iframe src="https://www.bing.com" class="w-full h-full border-none"></iframe></div>`,
+        Photos: () => `
+            <div class="h-full bg-white p-6 pt-16">
+                <h1 class="text-3xl font-bold mb-6">Library</h1>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="aspect-square bg-gray-200 rounded-lg"></div>
+                    <div class="aspect-square bg-gray-200 rounded-lg"></div>
+                    <div class="aspect-square bg-gray-200 rounded-lg"></div>
+                </div>
+            </div>`
     }
 };
 
-// Запуск системы
-window.onload = () => GOS.Core.boot();
-
-// Глобальные жесты
-document.addEventListener('keydown', e => {
-    if(e.key === 'h') GOS.Core.closeActiveApp(); // Хоткей для Home
-});
+window.onload = () => GOS.System.init();
 </script>
 </body>
 </html>
