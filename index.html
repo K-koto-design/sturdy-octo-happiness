@@ -2,9 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AetherOS Liquid</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AetherOS 26 | Liquid Edition</title>
     
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     
@@ -13,24 +17,13 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['-apple-system', 'system-ui', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'] },
+                    fontFamily: { sans: ['-apple-system', 'SF Pro Display', 'system-ui', 'sans-serif'] },
                     colors: {
-                        glass: {
-                            light: 'rgba(255, 255, 255, 0.2)',
-                            medium: 'rgba(255, 255, 255, 0.4)',
-                            border: 'rgba(255, 255, 255, 0.2)',
-                            dark: 'rgba(20, 20, 20, 0.6)'
-                        }
-                    },
-                    animation: {
-                        'blob': 'blob 7s infinite',
-                    },
-                    keyframes: {
-                        blob: {
-                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
-                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        ios: {
+                            blue: '#007AFF',
+                            green: '#34C759',
+                            red: '#FF3B30',
+                            glass: 'rgba(255, 255, 255, 0.15)'
                         }
                     }
                 }
@@ -39,582 +32,474 @@
     </script>
 
     <style>
-        /* Base Setup */
+        :root {
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+
         body { 
             margin: 0; 
-            background-color: #050505; 
+            background-color: #000; 
             height: 100vh; 
             width: 100vw; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            overflow: hidden; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            touch-action: none;
         }
 
-        /* The Screen Container (No Bezel) */
-        #screen-container {
-            width: 400px;
-            height: 860px;
-            border-radius: 50px;
+        #screen {
+            width: 100%;
+            height: 100%;
+            max-width: 430px;
+            max-height: 932px;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-            transform: scale(0.95);
-            transition: transform 0.3s ease;
+            background: #000;
         }
 
-        /* Liquid Glass Styles */
-        .liquid-glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        @media (min-width: 768px) {
+            #screen {
+                border-radius: 55px;
+                height: 880px;
+                width: 400px;
+                border: 12px solid #1a1a1a;
+                box-shadow: 0 0 100px rgba(0,0,0,0.5);
+            }
         }
-        
-        .liquid-glass-dark {
-            background: rgba(10, 10, 10, 0.7);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+        /* Glassmorphism Classes */
+        .liquid-blur {
+            backdrop-filter: blur(40px) saturate(200%);
+            -webkit-backdrop-filter: blur(40px) saturate(200%);
+            background: rgba(255, 255, 255, 0.12);
+            border: 0.5px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .liquid-dark {
+            backdrop-filter: blur(50px) saturate(150%);
+            -webkit-backdrop-filter: blur(50px) saturate(150%);
+            background: rgba(0, 0, 0, 0.6);
+            border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* App Transitions */
+        .app-window {
+            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s ease, border-radius 0.6s ease;
+        }
+
+        .app-minimized {
+            transform: translateY(100%) scale(0.8);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Dynamic Island Morphing */
+        #island {
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
         }
 
         /* Animations */
-        .app-open { animation: springOpen 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-        .app-close { animation: springClose 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        @keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0); } }
+        .floating { animation: float 4s ease-in-out infinite; }
 
-        @keyframes springOpen {
-            from { transform: scale(0.8); opacity: 0; border-radius: 50px; }
-            to { transform: scale(1); opacity: 1; border-radius: 0; }
+        .ios-icon {
+            transition: transform 0.2s cubic-bezier(0.33, 1, 0.68, 1);
         }
-        @keyframes springClose {
-            from { transform: scale(1); opacity: 1; border-radius: 0; }
-            to { transform: translateY(100%); opacity: 0; border-radius: 50px; }
-        }
-
-        /* Dynamic Island Animations */
-        .island-expand { animation: expandIsland 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        .island-shrink { animation: shrinkIsland 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-
-        @keyframes expandIsland {
-            to { width: 340px; height: 160px; border-radius: 40px; }
-        }
-        @keyframes shrinkIsland {
-            from { width: 340px; height: 160px; border-radius: 40px; }
-            to { width: 120px; height: 35px; border-radius: 20px; }
-        }
-
-        /* Music Bars Animation */
-        .bar { animation: sound 0.8s infinite ease-in-out; }
-        .bar:nth-child(1) { animation-delay: 0.1s; }
-        .bar:nth-child(2) { animation-delay: 0.2s; }
-        .bar:nth-child(3) { animation-delay: 0.3s; }
-        .bar:nth-child(4) { animation-delay: 0.1s; }
-        @keyframes sound { 0% { height: 4px; } 50% { height: 16px; } 100% { height: 4px; } }
-
-        /* Hide Scrollbar */
-        ::-webkit-scrollbar { display: none; }
+        .ios-icon:active { transform: scale(0.85); }
     </style>
 </head>
 <body>
 
-    <div id="screen-container">
-        <div id="wallpaper" class="absolute inset-0 bg-cover bg-center transition-all duration-700 transform scale-105" 
-             style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop');">
-            <div class="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40"></div>
+    <div id="screen" class="relative select-none">
+        
+        <div id="wp-layer" class="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] scale-110" 
+             style="background-image: url('https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=2574&auto=format&fit=crop');">
+            <div class="absolute inset-0 bg-black/10"></div>
         </div>
 
-        <div class="absolute top-0 w-full h-14 z-50 flex justify-between items-center px-8 text-white font-medium text-sm pt-2">
-            <span id="clock-status">9:41</span>
-            <div class="flex gap-2.5 items-center">
+        <div class="absolute top-0 w-full z-[1000] flex justify-between items-center px-8 text-white font-semibold text-[15px]" 
+             style="padding-top: calc(12px + var(--safe-top))">
+            <span id="sys-clock">00:00</span>
+            <div class="flex gap-1.5 items-center">
                 <i data-lucide="signal" class="w-4 h-4"></i>
-                <i data-lucide="wifi" id="wifi-icon" class="w-4 h-4"></i>
-                <div class="w-6 h-3 border border-white/30 rounded-sm relative">
-                    <div class="absolute inset-0.5 bg-white w-3/4"></div>
+                <i data-lucide="wifi" class="w-4 h-4"></i>
+                <div class="flex items-center gap-0.5">
+                    <span class="text-[11px] mr-0.5">84%</span>
+                    <i data-lucide="battery" class="w-5 h-5"></i>
                 </div>
             </div>
         </div>
 
-        <div id="island" onclick="Island.toggle()" 
-             class="absolute top-3 left-1/2 -translate-x-1/2 w-[120px] h-[35px] bg-black rounded-[20px] z-[60] flex flex-col items-center justify-start overflow-hidden transition-all duration-300 shadow-2xl cursor-pointer">
-            
-            <div id="island-collapsed" class="w-full h-[35px] flex items-center justify-between px-3 transition-opacity duration-200">
+        <div id="island" class="absolute left-1/2 -translate-x-1/2 bg-black z-[1100] flex items-center justify-center overflow-hidden cursor-pointer"
+             style="top: calc(11px + var(--safe-top)); width: 124px; height: 37px; border-radius: 20px;"
+             onclick="Island.handleTap()">
+            <div id="island-inner" class="w-full h-full flex items-center justify-between px-3 text-white transition-opacity duration-300">
                 </div>
+        </div>
 
-            <div id="island-expanded" class="w-full h-full opacity-0 flex flex-col p-6 text-white hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <div class="flex items-center gap-3">
-                        <div id="island-icon" class="w-10 h-10 rounded-xl bg-purple-500 flex items-center justify-center">
-                            <i data-lucide="music" class="w-5 h-5"></i>
+        <div id="ls" class="absolute inset-0 z-[500] flex flex-col items-center text-white transition-all duration-700 ease-out">
+            <div class="mt-24 text-center" style="margin-top: calc(85px + var(--safe-top))">
+                <p id="ls-date" class="text-[22px] font-medium opacity-90 mb-1">суббота, 3 января</p>
+                <h1 id="ls-clock" class="text-[100px] font-bold tracking-tight leading-none">00:00</h1>
+            </div>
+
+            <div class="mt-8 w-full px-5 space-y-3 max-h-[400px] overflow-hidden">
+                <div class="liquid-blur rounded-[28px] p-4 flex items-center gap-4 animate-[fadeIn_0.5s_ease]">
+                    <div class="w-11 h-11 bg-ios-blue rounded-full flex items-center justify-center shadow-lg">
+                        <i data-lucide="message-circle" class="w-6 h-6"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-sm">Sarah</h4>
+                            <span class="text-[10px] opacity-60">Just now</span>
                         </div>
-                        <div>
-                            <h3 class="font-bold text-sm" id="island-title">Not Playing</h3>
-                            <p class="text-xs text-gray-400" id="island-subtitle">Music</p>
-                        </div>
-                    </div>
-                    <div id="music-wave" class="flex gap-1 h-4 items-center hidden">
-                        <div class="bar w-1 bg-green-400 rounded-full h-2"></div>
-                        <div class="bar w-1 bg-green-400 rounded-full h-4"></div>
-                        <div class="bar w-1 bg-green-400 rounded-full h-3"></div>
-                        <div class="bar w-1 bg-green-400 rounded-full h-2"></div>
+                        <p class="text-[13px] opacity-80 leading-tight">Can't wait for AetherOS 26! 🚀</p>
                     </div>
                 </div>
-                
-                <div class="mt-auto flex justify-around items-center text-3xl">
-                    <i data-lucide="skip-back" class="fill-white w-6 h-6 hover:text-gray-300"></i>
-                    <i data-lucide="play" id="island-play-btn" class="fill-white w-8 h-8 hover:scale-110 transition" onclick="event.stopPropagation(); MusicApp.togglePlay()"></i>
-                    <i data-lucide="skip-forward" class="fill-white w-6 h-6 hover:text-gray-300"></i>
+            </div>
+
+            <div class="mt-auto mb-16 flex flex-col items-center" onclick="Kernel.unlock()">
+                <div class="w-1 h-1 bg-white rounded-full mb-4 animate-bounce"></div>
+                <p class="text-[13px] font-semibold tracking-wider opacity-60">SWIPE UP TO UNLOCK</p>
+            </div>
+
+            <div class="absolute bottom-12 w-full px-12 flex justify-between" style="bottom: calc(52px + var(--safe-bottom))">
+                <div class="w-12 h-12 liquid-blur rounded-full flex items-center justify-center active:scale-90 transition cursor-pointer">
+                    <i data-lucide="flashlight" class="w-5 h-5"></i>
+                </div>
+                <div class="w-12 h-12 liquid-blur rounded-full flex items-center justify-center active:scale-90 transition cursor-pointer">
+                    <i data-lucide="camera" class="w-5 h-5"></i>
                 </div>
             </div>
         </div>
 
-        <div id="lock-screen" class="absolute inset-0 z-40 flex flex-col items-center pt-28 text-white transition-all duration-700 ease-in-out" onclick="Kernel.unlock()">
-            <div class="flex flex-col items-center gap-2 drop-shadow-lg">
-                <i data-lucide="lock" class="w-5 h-5 mb-2 opacity-60"></i>
-                <h1 id="clock-lg" class="text-8xl font-thin tracking-tighter">9:41</h1>
-                <p id="date-lg" class="text-xl font-medium opacity-80">Friday, November 24</p>
-            </div>
-
-            <div class="mt-12 w-full px-6 space-y-3">
-                <div class="liquid-glass rounded-3xl p-4 flex items-center gap-4 animate-bounce hover:bg-white/10 transition">
-                    <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
-                        <i data-lucide="message-circle" class="w-5 h-5"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-sm">Sarah</h4>
-                        <p class="text-xs opacity-80">Are we still meeting for coffee?</p>
-                    </div>
-                    <span class="ml-auto text-xs opacity-50">2m</span>
-                </div>
-            </div>
-
-            <div class="absolute bottom-12 w-full px-12 flex justify-between">
-                <div class="w-12 h-12 bg-black/40 backdrop-blur-xl rounded-full flex items-center justify-center hover:bg-white/20 transition"><i data-lucide="flashlight" class="w-5 h-5"></i></div>
-                <div class="w-12 h-12 bg-black/40 backdrop-blur-xl rounded-full flex items-center justify-center hover:bg-white/20 transition"><i data-lucide="camera" class="w-5 h-5"></i></div>
-            </div>
-            
-            <div class="absolute bottom-4 w-32 h-1 bg-white rounded-full opacity-50"></div>
-        </div>
-
-        <div id="home-screen" class="absolute inset-0 z-30 pt-20 px-6 opacity-0 scale-90 transition-all duration-500 pointer-events-none">
-            
-            <div class="grid grid-cols-4 gap-x-4 gap-y-8" id="app-grid">
+        <div id="hs" class="absolute inset-0 z-[400] pt-28 px-6 opacity-0 scale-95 pointer-events-none transition-all duration-500">
+            <div id="app-grid" class="grid grid-cols-4 gap-x-4 gap-y-8">
                 </div>
 
-            <div class="absolute bottom-8 left-4 right-4 h-24 liquid-glass rounded-[35px] flex items-center justify-around px-2 z-30">
-                <div onclick="Kernel.openApp('phone')" class="group relative w-14 h-14 bg-green-500 rounded-[18px] flex items-center justify-center shadow-lg transition-transform active:scale-90 cursor-pointer">
-                    <i data-lucide="phone" class="text-white w-7 h-7"></i>
+            <div class="absolute left-5 right-5 h-[92px] liquid-blur rounded-[38px] flex items-center justify-around px-3" 
+                 style="bottom: calc(24px + var(--safe-bottom))">
+                <div onclick="Kernel.launch('phone')" class="ios-icon w-16 h-16 bg-gradient-to-b from-[#5af37a] to-[#34c759] rounded-[18px] flex items-center justify-center shadow-lg cursor-pointer">
+                    <i data-lucide="phone" class="text-white fill-white w-8 h-8"></i>
                 </div>
-                <div onclick="Kernel.openApp('safari')" class="group w-14 h-14 bg-blue-500 rounded-[18px] flex items-center justify-center shadow-lg transition-transform active:scale-90 cursor-pointer">
-                    <i data-lucide="globe" class="text-white w-7 h-7"></i>
+                <div onclick="Kernel.launch('messages')" class="ios-icon w-16 h-16 bg-gradient-to-b from-[#5af37a] to-[#34c759] rounded-[18px] flex items-center justify-center shadow-lg cursor-pointer">
+                    <i data-lucide="message-square" class="text-white fill-white w-8 h-8"></i>
                 </div>
-                <div onclick="Kernel.openApp('messages')" class="group w-14 h-14 bg-green-400 rounded-[18px] flex items-center justify-center shadow-lg transition-transform active:scale-90 cursor-pointer">
-                    <i data-lucide="message-square" class="text-white w-7 h-7"></i>
+                <div onclick="Kernel.launch('safari')" class="ios-icon w-16 h-16 bg-white rounded-[18px] flex items-center justify-center shadow-lg cursor-pointer overflow-hidden">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/52/Safari_browser_logo.svg" class="w-12 h-12" alt="safari">
                 </div>
-                <div onclick="Kernel.openApp('music')" class="group w-14 h-14 bg-red-500 rounded-[18px] flex items-center justify-center shadow-lg transition-transform active:scale-90 cursor-pointer">
-                    <i data-lucide="music" class="text-white w-7 h-7"></i>
+                <div onclick="Kernel.launch('music')" class="ios-icon w-16 h-16 bg-gradient-to-br from-[#fb516e] to-[#ff2d55] rounded-[18px] flex items-center justify-center shadow-lg cursor-pointer">
+                    <i data-lucide="music" class="text-white fill-white w-8 h-8"></i>
                 </div>
-            </div>
-            
-            <div class="absolute bottom-36 w-full flex justify-center gap-2">
-                <div class="w-2 h-2 bg-white rounded-full"></div>
-                <div class="w-2 h-2 bg-white/30 rounded-full"></div>
             </div>
         </div>
 
-        <div id="app-container" class="absolute inset-0 z-40 hidden flex-col bg-black overflow-hidden">
+        <div id="app-runtime" class="absolute inset-0 z-[600] pointer-events-none">
             </div>
 
-        <div onclick="Kernel.goHome()" class="absolute bottom-2 left-1/2 -translate-x-1/2 w-36 h-1.5 bg-white/80 rounded-full z-50 cursor-pointer shadow-lg hover:bg-white transition-colors"></div>
-    
+        <div id="home-indicator" class="absolute left-1/2 -translate-x-1/2 w-36 h-1.5 bg-white/40 rounded-full z-[2000] cursor-pointer hover:bg-white/80 transition-all"
+             style="bottom: calc(8px + var(--safe-bottom))" onclick="Kernel.minimize()"></div>
     </div>
 
     <script>
-        /* ------------------------------------------------
-           KERNEL: System State & Orchestration
-        ------------------------------------------------ */
+        /* -------------------------------------------------------------------------
+           OS KERNEL: The Brain of AetherOS
+        ------------------------------------------------------------------------- */
         const Kernel = {
             state: {
-                locked: true,
+                isLocked: true,
                 activeApp: null,
-                flightMode: false
+                runningApps: new Set(),
+                time: new Date()
             },
 
             init() {
                 this.updateClock();
                 setInterval(() => this.updateClock(), 1000);
-                this.renderGrid();
+                this.renderAppGrid();
                 lucide.createIcons();
+                
+                // PWA Context Menu disable
+                window.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); return false; };
             },
 
             updateClock() {
-                const now = new Date();
-                const time = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: false });
-                const date = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+                this.state.time = new Date();
+                const timeStr = this.state.time.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                const dateStr = this.state.time.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
                 
-                document.getElementById('clock-status').innerText = time;
-                document.getElementById('clock-lg').innerText = time;
-                document.getElementById('date-lg').innerText = date;
+                document.getElementById('sys-clock').innerText = timeStr;
+                document.getElementById('ls-clock').innerText = timeStr;
+                document.getElementById('ls-date').innerText = dateStr;
             },
 
             unlock() {
-                if(!this.state.locked) return;
-                this.state.locked = false;
+                if (!this.state.isLocked) return;
+                this.state.isLocked = false;
                 
-                const lock = document.getElementById('lock-screen');
-                const home = document.getElementById('home-screen');
-                const wallpaper = document.getElementById('wallpaper');
+                const ls = document.getElementById('ls');
+                const hs = document.getElementById('hs');
+                const wp = document.getElementById('wp-layer');
 
-                lock.style.transform = 'translateY(-100%)';
-                lock.style.opacity = '0';
+                ls.style.transform = 'translateY(-110%) scale(1.1)';
+                ls.style.opacity = '0';
                 
-                home.classList.remove('opacity-0', 'scale-90', 'pointer-events-none');
-                home.classList.add('opacity-100', 'scale-100');
+                hs.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+                hs.classList.add('opacity-100', 'scale-100');
                 
-                // Subtle wallpaper zoom on unlock
-                wallpaper.classList.remove('scale-105');
-                wallpaper.classList.add('scale-100');
+                wp.style.transform = 'scale(1)';
             },
 
-            openApp(appId) {
-                if (this.state.locked) return;
-                
-                const app = Apps[appId];
-                if(!app) return;
+            launch(appId) {
+                const app = Registry[appId];
+                if (!app) return;
+
+                const runtime = document.getElementById('app-runtime');
+                let appEl = document.getElementById(`app-win-${appId}`);
+
+                if (!appEl) {
+                    appEl = document.createElement('div');
+                    appEl.id = `app-win-${appId}`;
+                    appEl.className = 'app-window absolute inset-0 bg-black app-minimized z-[600] pointer-events-auto rounded-[50px] overflow-hidden';
+                    appEl.innerHTML = app.template();
+                    runtime.appendChild(appEl);
+                    if (app.onLaunch) app.onLaunch(appEl);
+                }
 
                 this.state.activeApp = appId;
-                const container = document.getElementById('app-container');
-                
-                // Render App
-                container.innerHTML = app.render();
-                container.classList.remove('hidden', 'app-close');
-                container.classList.add('flex', 'app-open');
+                this.state.runningApps.add(appId);
 
-                // Initialize App Logic if exists
-                if(app.init) setTimeout(app.init, 100); // minimal delay for DOM render
+                // Open Animation
+                requestAnimationFrame(() => {
+                    appEl.classList.remove('app-minimized');
+                    appEl.style.borderRadius = "0px";
+                    appEl.style.transform = "translateY(0) scale(1)";
+                    appEl.style.opacity = "1";
+                    document.getElementById('home-indicator').style.backgroundColor = app.indicatorColor || "rgba(255,255,255,0.4)";
+                });
 
                 lucide.createIcons();
             },
 
-            goHome() {
+            minimize() {
                 if (!this.state.activeApp) return;
                 
-                const container = document.getElementById('app-container');
-                container.classList.remove('app-open');
-                container.classList.add('app-close');
-
-                setTimeout(() => {
-                    container.classList.add('hidden');
-                    container.innerHTML = '';
-                    this.state.activeApp = null;
-                }, 400);
+                const appId = this.state.activeApp;
+                const appEl = document.getElementById(`app-win-${appId}`);
+                
+                appEl.classList.add('app-minimized');
+                appEl.style.borderRadius = "55px";
+                document.getElementById('home-indicator').style.backgroundColor = "rgba(255,255,255,0.4)";
+                
+                this.state.activeApp = null;
             },
 
-            renderGrid() {
+            renderAppGrid() {
                 const grid = document.getElementById('app-grid');
-                // Definition of Home Screen Apps
-                const homeApps = [
-                    { id: 'photos', name: 'Photos', color: 'bg-white', icon: 'image', iconColor: 'text-pink-500' },
-                    { id: 'settings', name: 'Settings', color: 'bg-gray-600', icon: 'settings', iconColor: 'text-white' },
-                    { id: 'weather', name: 'Weather', color: 'bg-blue-400', icon: 'cloud-sun', iconColor: 'text-white' },
-                    { id: 'clock', name: 'Clock', color: 'bg-black border border-white/20', icon: 'clock', iconColor: 'text-white' },
-                    { id: 'wallet', name: 'Wallet', color: 'bg-black', icon: 'credit-card', iconColor: 'text-green-400' },
-                    { id: 'notes', name: 'Notes', color: 'bg-yellow-200', icon: 'file-text', iconColor: 'text-yellow-600' },
-                    { id: 'appstore', name: 'App Store', color: 'bg-blue-600', icon: 'aperture', iconColor: 'text-white' },
-                    { id: 'health', name: 'Health', color: 'bg-white', icon: 'heart', iconColor: 'text-red-500' },
+                const apps = [
+                    { id: 'photos', name: 'Фото', icon: 'image', color: 'bg-white text-blue-500' },
+                    { id: 'camera', name: 'Камера', icon: 'camera', color: 'bg-zinc-800 text-white' },
+                    { id: 'settings', name: 'Настройки', icon: 'settings', color: 'bg-zinc-500 text-white' },
+                    { id: 'calendar', name: 'Календарь', icon: 'calendar', color: 'bg-white text-red-500' },
+                    { id: 'notes', name: 'Заметки', icon: 'edit-3', color: 'bg-yellow-100 text-yellow-600' },
+                    { id: 'maps', name: 'Карты', icon: 'map', color: 'bg-emerald-100 text-emerald-600' },
+                    { id: 'health', name: 'Здоровье', icon: 'heart', color: 'bg-white text-rose-500' },
+                    { id: 'wallet', name: 'Wallet', icon: 'credit-card', color: 'bg-zinc-900 text-white' }
                 ];
 
-                grid.innerHTML = homeApps.map(app => `
-                    <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="Kernel.openApp('${app.id}')">
-                        <div class="w-[62px] h-[62px] ${app.color} rounded-[18px] flex items-center justify-center shadow-lg group-active:scale-90 transition-transform duration-200">
-                            <i data-lucide="${app.icon}" class="${app.iconColor} w-8 h-8"></i>
+                grid.innerHTML = apps.map(app => `
+                    <div class="flex flex-col items-center gap-1.5 cursor-pointer" onclick="Kernel.launch('${app.id}')">
+                        <div class="ios-icon w-[72px] h-[72px] ${app.color} rounded-[20px] flex items-center justify-center shadow-lg">
+                            <i data-lucide="${app.icon}" class="w-9 h-9"></i>
                         </div>
-                        <span class="text-xs font-medium text-white drop-shadow-md">${app.name}</span>
+                        <span class="text-[12px] font-medium text-white">${app.name}</span>
                     </div>
                 `).join('');
             }
         };
 
-        /* ------------------------------------------------
-           ISLAND: Dynamic Interactions
-        ------------------------------------------------ */
+        /* -------------------------------------------------------------------------
+           DYNAMIC ISLAND: Smart Overlay System
+        ------------------------------------------------------------------------- */
         const Island = {
-            isExpanded: false,
-            
-            toggle() {
-                const el = document.getElementById('island');
-                const collapsed = document.getElementById('island-collapsed');
-                const expanded = document.getElementById('island-expanded');
-                
-                if (this.isExpanded) {
-                    // Shrink
-                    el.style.animation = 'shrinkIsland 0.4s forwards';
-                    expanded.classList.add('hidden');
-                    expanded.classList.remove('opacity-100');
-                    setTimeout(() => {
-                        collapsed.classList.remove('opacity-0', 'hidden');
-                    }, 200);
-                } else {
-                    // Expand
-                    el.style.animation = 'expandIsland 0.4s forwards';
-                    collapsed.classList.add('opacity-0', 'hidden');
-                    expanded.classList.remove('hidden');
-                    setTimeout(() => {
-                        expanded.classList.add('opacity-100');
-                    }, 100);
+            state: 'idle', // idle, expanded, mini
+            timer: null,
+
+            update(content, type = 'mini') {
+                const island = document.getElementById('island');
+                const inner = document.getElementById('island-inner');
+
+                if (type === 'mini') {
+                    island.style.width = "180px";
+                    inner.innerHTML = content;
                 }
-                this.isExpanded = !this.isExpanded;
+                inner.style.opacity = "1";
+                lucide.createIcons();
             },
 
-            updateMusicState(isPlaying) {
-                const wave = document.getElementById('music-wave');
-                const title = document.getElementById('island-title');
-                const playBtn = document.getElementById('island-play-btn');
-                
-                // Collapsed View Update
-                const collapsed = document.getElementById('island-collapsed');
-                if (isPlaying) {
-                    collapsed.innerHTML = `
-                        <div class="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center"><i data-lucide="music" class="w-2 h-2 text-white"></i></div>
-                        <div class="flex gap-0.5 h-3 items-end">
-                            <div class="w-0.5 bg-green-400 h-2 animate-bounce"></div>
-                            <div class="w-0.5 bg-green-400 h-3 animate-bounce" style="animation-delay:0.1s"></div>
-                            <div class="w-0.5 bg-green-400 h-1 animate-bounce" style="animation-delay:0.2s"></div>
-                        </div>
-                    `;
-                    wave.classList.remove('hidden');
-                    title.innerText = "Midnight City";
-                    playBtn.innerHTML = '<path d="M6 4h4v16H6zM14 4h4v16h-4z" fill="currentColor" />'; // Pause Icon
+            handleTap() {
+                const island = document.getElementById('island');
+                if (this.state === 'expanded') {
+                    island.style.width = "124px";
+                    island.style.height = "37px";
+                    this.state = 'idle';
                 } else {
-                    collapsed.innerHTML = '';
-                    wave.classList.add('hidden');
-                    title.innerText = "Paused";
-                    playBtn.innerHTML = '<polygon points="5 3 19 12 5 21 5 3" fill="currentColor"></polygon>'; // Play Icon
+                    island.style.width = "350px";
+                    island.style.height = "180px";
+                    island.style.borderRadius = "45px";
+                    this.state = 'expanded';
+                    this.renderExpanded();
                 }
+            },
+
+            renderExpanded() {
+                const inner = document.getElementById('island-inner');
+                inner.innerHTML = `
+                    <div class="w-full p-6 flex flex-col justify-between h-full">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-4">
+                                <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                                    <i data-lucide="music" class="w-8 h-8"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-lg leading-tight">Starboy</h4>
+                                    <p class="opacity-60 text-sm">The Weeknd</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-1 h-4 items-end">
+                                <div class="w-1 bg-ios-green h-2 animate-bounce"></div>
+                                <div class="w-1 bg-ios-green h-4 animate-bounce" style="animation-delay: 0.2s"></div>
+                                <div class="w-1 bg-ios-green h-3 animate-bounce" style="animation-delay: 0.4s"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-around items-center">
+                            <i data-lucide="skip-back" class="w-8 h-8 fill-current"></i>
+                            <i data-lucide="pause" class="w-10 h-10 fill-current"></i>
+                            <i data-lucide="skip-forward" class="w-8 h-8 fill-current"></i>
+                        </div>
+                    </div>
+                `;
                 lucide.createIcons();
             }
         };
 
-        /* ------------------------------------------------
-           APPS: Functional Logic
-        ------------------------------------------------ */
-        const Apps = {
-            
-            // 1. Settings App
-            settings: {
-                render: () => `
-                    <div class="h-full bg-black text-white p-6 pt-12 overflow-y-auto">
-                        <h1 class="text-3xl font-bold mb-6">Settings</h1>
-                        
-                        <div class="flex items-center gap-4 p-4 rounded-2xl bg-[#1c1c1e] mb-8">
-                            <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-xl font-bold">JD</div>
-                            <div>
-                                <h2 class="font-medium text-lg">John Doe</h2>
-                                <p class="text-sm text-gray-400">Apple ID, iCloud, Media</p>
+        /* -------------------------------------------------------------------------
+           APP REGISTRY: Functional Application Definitions
+        ------------------------------------------------------------------------- */
+        const Registry = {
+            'music': {
+                indicatorColor: "rgba(255,255,255,0.8)",
+                template: () => `
+                    <div class="h-full bg-gradient-to-b from-zinc-800 to-black p-8 pt-20 flex flex-col text-white">
+                        <div class="w-full aspect-square bg-zinc-700 rounded-3xl shadow-2xl mb-10 overflow-hidden floating">
+                            <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=2670&auto=format&fit=crop" class="w-full h-full object-cover">
+                        </div>
+                        <div class="mb-10">
+                            <h1 class="text-3xl font-bold mb-1">Starboy</h1>
+                            <p class="text-xl opacity-60">The Weeknd</p>
+                        </div>
+                        <div class="w-full h-1.5 bg-white/10 rounded-full mb-2">
+                            <div class="w-1/3 h-full bg-white rounded-full relative">
+                                <div class="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg"></div>
                             </div>
                         </div>
-
-                        <div class="bg-[#1c1c1e] rounded-xl overflow-hidden mb-6">
-                            <div class="flex items-center justify-between p-4 border-b border-gray-700 active:bg-gray-800" onclick="Apps.settings.toggleFlight()">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-7 h-7 bg-orange-500 rounded-md flex items-center justify-center"><i data-lucide="plane" class="w-4 h-4"></i></div>
-                                    <span>Airplane Mode</span>
-                                </div>
-                                <div id="toggle-flight" class="w-12 h-7 bg-gray-600 rounded-full p-1 transition-colors duration-300">
-                                    <div class="w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300"></div>
-                                </div>
-                            </div>
-                            <div class="flex items-center justify-between p-4 active:bg-gray-800" onclick="Kernel.unlock()">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-7 h-7 bg-blue-500 rounded-md flex items-center justify-center"><i data-lucide="wifi" class="w-4 h-4"></i></div>
-                                    <span>Wi-Fi</span>
-                                </div>
-                                <span class="text-gray-400 text-sm">SuperFast_5G</span>
-                            </div>
+                        <div class="flex justify-between text-xs opacity-40 mb-10">
+                            <span>1:24</span>
+                            <span>3:50</span>
                         </div>
-
-                         <div class="bg-[#1c1c1e] rounded-xl overflow-hidden">
-                             <div class="flex items-center justify-between p-4 border-b border-gray-700 active:bg-gray-800" onclick="Apps.settings.changeWallpaper()">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-7 h-7 bg-cyan-500 rounded-md flex items-center justify-center"><i data-lucide="image" class="w-4 h-4"></i></div>
-                                    <span>Wallpaper</span>
-                                </div>
-                                <i data-lucide="chevron-right" class="text-gray-500 w-4 h-4"></i>
-                            </div>
-                        </div>
-                    </div>
-                `,
-                toggleFlight: () => {
-                    Kernel.state.flightMode = !Kernel.state.flightMode;
-                    const toggle = document.getElementById('toggle-flight');
-                    const dot = toggle.querySelector('div');
-                    const wifi = document.getElementById('wifi-icon');
-                    
-                    if(Kernel.state.flightMode) {
-                        toggle.classList.replace('bg-gray-600', 'bg-green-500');
-                        dot.classList.add('translate-x-5');
-                        wifi.classList.replace('text-white', 'text-gray-600'); // Dim Wifi
-                    } else {
-                        toggle.classList.replace('bg-green-500', 'bg-gray-600');
-                        dot.classList.remove('translate-x-5');
-                        wifi.classList.replace('text-gray-600', 'text-white');
-                    }
-                },
-                changeWallpaper: () => {
-                    // Cycle specific nice wallpapers
-                    const urls = [
-                         "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop",
-                         "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2670&auto=format&fit=crop",
-                         "https://images.unsplash.com/photo-1531685250784-75699ddc9afc?q=80&w=2670&auto=format&fit=crop"
-                    ];
-                    const bg = document.getElementById('wallpaper');
-                    const current = bg.style.backgroundImage;
-                    let next = urls[0];
-                    if(current.includes(urls[0])) next = urls[1];
-                    if(current.includes(urls[1])) next = urls[2];
-                    
-                    bg.style.backgroundImage = `url('${next}')`;
-                }
-            },
-
-            // 2. Music App
-            music: {
-                isPlaying: false,
-                render: () => `
-                    <div class="h-full bg-gradient-to-b from-purple-900 to-black text-white p-6 pt-12 flex flex-col">
-                        <div class="w-full aspect-square bg-white/10 rounded-2xl shadow-2xl mb-8 overflow-hidden relative group">
-                            <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2670&auto=format&fit=crop" class="w-full h-full object-cover" />
-                        </div>
-                        
-                        <div class="mb-2">
-                            <h2 class="text-2xl font-bold">Midnight City</h2>
-                            <p class="text-purple-300">M83 • Hurry Up, We're Dreaming</p>
-                        </div>
-
-                        <div class="w-full h-1 bg-white/20 rounded-full mt-4 mb-2">
-                            <div class="w-1/3 h-full bg-white rounded-full"></div>
-                        </div>
-                        <div class="flex justify-between text-xs text-gray-400 mb-8">
-                            <span>1:12</span>
-                            <span>4:03</span>
-                        </div>
-
-                        <div class="flex justify-between items-center px-4 mt-auto mb-12">
-                            <i data-lucide="shuffle" class="w-6 h-6 text-gray-400"></i>
-                            <i data-lucide="skip-back" class="w-8 h-8 fill-white"></i>
-                            <div onclick="MusicApp.togglePlay()" class="w-16 h-16 bg-white rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition shadow-lg shadow-purple-900/50">
-                                <i id="app-play-icon" data-lucide="play" class="w-8 h-8 text-black fill-black ml-1"></i>
-                            </div>
-                            <i data-lucide="skip-forward" class="w-8 h-8 fill-white"></i>
-                            <i data-lucide="repeat" class="w-6 h-6 text-gray-400"></i>
+                        <div class="flex justify-around items-center px-4">
+                            <i data-lucide="shuffle" class="w-6 h-6 opacity-40"></i>
+                            <i data-lucide="skip-back" class="w-10 h-10 fill-current"></i>
+                            <i data-lucide="play" class="w-14 h-14 fill-current"></i>
+                            <i data-lucide="skip-forward" class="w-10 h-10 fill-current"></i>
+                            <i data-lucide="repeat" class="w-6 h-6 opacity-40"></i>
                         </div>
                     </div>
                 `
             },
 
-            // 3. Messages App
-            messages: {
-                msgs: [
-                    { type: 'in', text: 'Hey! Are we still on for tonight?' },
-                ],
-                render: () => `
-                    <div class="h-full bg-black text-white flex flex-col">
-                        <div class="h-24 pt-12 px-4 flex items-center gap-4 bg-[#1c1c1e] border-b border-gray-800">
-                            <div onclick="Kernel.goHome()" class="cursor-pointer"><i data-lucide="chevron-left" class="w-6 h-6 text-blue-500"></i></div>
-                            <div class="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center">S</div>
-                            <div class="flex-1 text-center font-semibold pr-12">Sarah</div>
+            'messages': {
+                indicatorColor: "rgba(0,0,0,0.2)",
+                template: () => `
+                    <div class="h-full bg-white text-black flex flex-col">
+                        <div class="pt-16 pb-4 px-6 liquid-blur sticky top-0 z-10 flex items-center justify-between">
+                            <h1 class="text-3xl font-bold">Сообщения</h1>
+                            <i data-lucide="edit" class="text-ios-blue"></i>
                         </div>
-
-                        <div id="msg-area" class="flex-1 p-4 space-y-4 overflow-y-auto">
-                            ${Apps.messages.msgs.map(m => `
-                                <div class="flex w-full ${m.type === 'in' ? 'justify-start' : 'justify-end'}">
-                                    <div class="${m.type === 'in' ? 'bg-[#1c1c1e]' : 'bg-blue-600'} px-4 py-2 rounded-2xl max-w-[70%] text-sm">
-                                        ${m.text}
+                        <div class="flex-1 overflow-y-auto px-4 pt-4 space-y-6">
+                            <div class="flex gap-4 items-center">
+                                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-orange-400 to-red-500"></div>
+                                <div class="flex-1 border-b border-gray-100 pb-4">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="font-bold text-lg">Sarah</span>
+                                        <span class="text-sm opacity-40">10:24</span>
                                     </div>
+                                    <p class="text-gray-500 line-clamp-1">Can't wait for AetherOS 26! 🚀</p>
                                 </div>
-                            `).join('')}
-                        </div>
-
-                        <div class="h-20 bg-[#1c1c1e] p-4 flex items-center gap-3">
-                            <i data-lucide="plus" class="text-gray-400"></i>
-                            <input id="msg-input" type="text" placeholder="iMessage" class="flex-1 bg-black rounded-full h-9 px-4 text-white text-sm focus:outline-none border border-gray-800">
-                            <i onclick="Apps.messages.send()" data-lucide="arrow-up-circle" class="text-blue-500 w-8 h-8 cursor-pointer hover:text-blue-400"></i>
+                            </div>
+                            <div class="flex gap-4 items-center">
+                                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500"></div>
+                                <div class="flex-1 border-b border-gray-100 pb-4">
+                                    <div class="flex justify-between mb-1">
+                                        <span class="font-bold text-lg">Alex</span>
+                                        <span class="text-sm opacity-40">Вчера</span>
+                                    </div>
+                                    <p class="text-gray-500 line-clamp-1">Meeting moved to 3 PM.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                `,
-                init: () => {
-                    const el = document.getElementById('msg-input');
-                    el.addEventListener('keypress', (e) => { if(e.key === 'Enter') Apps.messages.send(); });
-                },
-                send: () => {
-                    const input = document.getElementById('msg-input');
-                    const area = document.getElementById('msg-area');
-                    const txt = input.value;
-                    if(!txt) return;
-
-                    // Add User Message
-                    area.innerHTML += `
-                        <div class="flex w-full justify-end animate-[pulse_0.2s]">
-                            <div class="bg-blue-600 px-4 py-2 rounded-2xl max-w-[70%] text-sm">${txt}</div>
-                        </div>
-                    `;
-                    input.value = '';
-                    area.scrollTop = area.scrollHeight;
-
-                    // Simulate Reply
-                    setTimeout(() => {
-                        area.innerHTML += `
-                            <div class="flex w-full justify-start animate-[pulse_0.2s]">
-                                <div class="bg-[#1c1c1e] px-4 py-2 rounded-2xl max-w-[70%] text-sm">That sounds great! See you then. 🎉</div>
-                            </div>
-                        `;
-                        area.scrollTop = area.scrollHeight;
-                    }, 1500);
-                }
+                `
             },
 
-            // 4. Photos (Liquid Masonry)
-            photos: {
-                render: () => `
-                    <div class="h-full bg-black text-white pt-12 px-1 overflow-y-auto">
-                        <div class="flex justify-between items-end px-4 mb-4">
-                            <h1 class="text-3xl font-bold">Library</h1>
-                            <span class="text-blue-500 font-medium">Select</span>
+            'safari': {
+                indicatorColor: "rgba(0,0,0,0.1)",
+                template: () => `
+                    <div class="h-full bg-white flex flex-col">
+                        <div class="flex-1 bg-gray-50 flex items-center justify-center">
+                             <div class="text-center opacity-20">
+                                <i data-lucide="compass" class="w-24 h-24 mx-auto mb-4"></i>
+                                <p class="text-xl font-medium">Aether Search</p>
+                             </div>
                         </div>
-                        <div class="grid grid-cols-3 gap-0.5">
-                            ${[...Array(15)].map((_, i) => `
-                                <div class="aspect-square bg-gray-800 overflow-hidden relative cursor-pointer active:opacity-80">
-                                    <img src="https://source.unsplash.com/random/300x300?sig=${i}" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/300/333/fff?text=IMG'"/>
-                                </div>
-                            `).join('')}
+                        <div class="p-4 bg-gray-100/80 backdrop-blur-xl border-t border-gray-200">
+                            <div class="bg-white rounded-2xl h-12 flex items-center px-4 gap-3 shadow-sm">
+                                <i data-lucide="lock" class="w-4 h-4 opacity-30"></i>
+                                <span class="text-gray-400">apple.com</span>
+                                <i data-lucide="rotate-cw" class="w-4 h-4 ml-auto opacity-30"></i>
+                            </div>
+                            <div class="flex justify-between mt-4 px-4 pb-4">
+                                <i data-lucide="chevron-left" class="opacity-20"></i>
+                                <i data-lucide="chevron-right" class="opacity-20"></i>
+                                <i data-lucide="share" class="text-ios-blue"></i>
+                                <i data-lucide="book-open" class="text-ios-blue"></i>
+                                <i data-lucide="copy" class="text-ios-blue"></i>
+                            </div>
                         </div>
                     </div>
                 `
             }
         };
 
-        // Helper for Music App to access its own logic globally
-        const MusicApp = {
-            togglePlay: () => {
-                const appIcon = document.getElementById('app-play-icon');
-                Apps.music.isPlaying = !Apps.music.isPlaying;
-                
-                // Update In-App Icon
-                if(appIcon) {
-                    if(Apps.music.isPlaying) {
-                        appIcon.innerHTML = '<path d="M6 4h4v16H6zM14 4h4v16h-4z" />'; // Pause
-                    } else {
-                        appIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>'; // Play
-                    }
-                }
-
-                // Update Island
-                Island.updateMusicState(Apps.music.isPlaying);
+        // Standard renderer for generic apps
+        ['photos', 'camera', 'settings', 'calendar', 'notes', 'maps', 'health', 'wallet', 'phone'].forEach(id => {
+            if (!Registry[id]) {
+                Registry[id] = {
+                    template: () => `
+                        <div class="h-full bg-neutral-900 flex flex-col items-center justify-center text-white">
+                            <i data-lucide="layout" class="w-20 h-20 opacity-10 mb-6"></i>
+                            <h2 class="text-2xl font-bold opacity-30">${id.toUpperCase()}</h2>
+                        </div>
+                    `
+                };
             }
-        };
+        });
 
-        // Initialize System
+        /* -------------------------------------------------------------------------
+           BOOTSTRAP
+        ------------------------------------------------------------------------- */
         Kernel.init();
 
     </script>
