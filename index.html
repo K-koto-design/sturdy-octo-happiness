@@ -3,308 +3,323 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GOS 26 Ultimate Pro</title>
+    <title>GOS 26 Ultimate</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
     <style>
-        :root {
-            --ios-bg: #F2F2F7;
-            --ios-blue: #007AFF;
-            --safe-top: env(safe-area-inset-top, 20px);
-        }
+        :root { --ios-blue: #007AFF; --ios-bg: #F2F2F7; }
+        * { -webkit-tap-highlight-color: transparent; user-select: none; touch-action: manipulation; }
+        body { background: #000; margin: 0; overflow: hidden; height: 100dvh; font-family: -apple-system, system-ui, sans-serif; color: white; }
 
-        * { -webkit-tap-highlight-color: transparent; user-select: none; outline: none; }
-        
-        body { background: #000; margin: 0; overflow: hidden; height: 100dvh; color: white; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-
-        #os-container {
-            position: relative; width: 100%; height: 100%; max-width: 430px; margin: 0 auto;
-            background: #000; overflow: hidden;
-        }
+        #iphone { position: relative; width: 100%; height: 100%; max-width: 430px; margin: 0 auto; background: #000; overflow: hidden; }
 
         /* Wallpaper */
-        #wallpaper {
-            position: absolute; inset: -20px;
-            background: url('https://images.unsplash.com/photo-1620206343767-7da98185edd4?q=80&w=1920') center/cover;
-            z-index: 1; transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.8s;
-        }
-        .app-open #wallpaper { transform: scale(1.15); filter: blur(30px) brightness(0.6); }
+        .wp { position: absolute; inset: -20px; background: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564') center/cover; z-index: 1; transition: filter 0.6s, transform 0.6s; }
+        .blur-bg .wp { filter: blur(30px) brightness(0.7); transform: scale(1.1); }
 
-        /* Island */
-        #island {
-            position: absolute; top: calc(11px + var(--safe-top)); left: 50%; transform: translateX(-50%);
-            background: #000; z-index: 10000; width: 125px; height: 37px; border-radius: 20px;
-            display: flex; align-items: center; justify-content: center; transition: all 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-        }
-        #island.notif { width: 350px; height: 80px; border-radius: 35px; }
+        /* Lock Screen */
+        #lock-screen { position: absolute; inset: 0; z-index: 9000; background: rgba(0,0,0,0.3); backdrop-filter: blur(5px); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 100px 0 60px; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        /* Windows */
-        .window {
-            position: absolute; inset: 0; z-index: 5000; background: var(--ios-bg);
-            transform: translateY(100%); border-radius: 45px;
-            transition: transform 0.6s cubic-bezier(0.3, 1, 0.3, 1), border-radius 0.4s;
-            overflow: hidden; color: black;
-        }
-        .window.active { transform: translateY(0); border-radius: 0; }
+        /* Boot Screen */
+        #boot-screen { position: absolute; inset: 0; z-index: 10000; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .boot-loader { width: 150px; height: 3px; background: #333; border-radius: 5px; margin-top: 40px; overflow: hidden; }
+        .boot-progress { width: 0%; height: 100%; background: #fff; }
 
-        /* iOS List Styles */
-        .ios-list { background: white; border-radius: 12px; margin: 0 16px 20px; overflow: hidden; }
-        .ios-item { 
-            padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 0.5px solid #E5E5EA; cursor: pointer;
-        }
-        .ios-item:last-child { border-bottom: none; }
-        .ios-item:active { background: #E5E5EA; }
+        /* Dynamic Island */
+        #island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); background: #000; z-index: 10001; width: 120px; height: 36px; border-radius: 20px; transition: all 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        #island.expanded { width: 350px; height: 80px; border-radius: 35px; }
 
-        /* Home Indicator */
-        #home-bar {
-            position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-            width: 135px; height: 5px; background: rgba(255,255,255,0.8);
-            border-radius: 10px; z-index: 10001; cursor: pointer;
-        }
-        
-        /* Update Spinner */
-        .spinner {
-            width: 40px; height: 40px; border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--ios-blue); border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Control Center */
+        #control-center { position: absolute; inset: 0; z-index: 8500; background: rgba(0,0,0,0.4); backdrop-filter: blur(40px); transform: translateY(-100%); transition: transform 0.4s cubic-bezier(0.3, 1, 0.3, 1); padding: 80px 25px; }
+        #control-center.open { transform: translateY(0); }
+
+        /* App Windows */
+        .app-win { position: absolute; inset: 0; z-index: 5000; background: var(--ios-bg); transform: translateY(110%); transition: transform 0.5s cubic-bezier(0.3, 1, 0.3, 1); border-radius: 40px; overflow: hidden; color: black; }
+        .app-win.active { transform: translateY(0); border-radius: 0; }
+
+        /* App Grid */
+        .home-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px 15px; padding: 20px; position: relative; z-index: 10; padding-top: 80px; }
+        .icon-unit { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
+        .icon-box { width: 72px; height: 72px; border-radius: 18px; display: flex; items-center; justify-center; box-shadow: 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.2s; background: white; }
+        .icon-box:active { transform: scale(0.85); }
+        .icon-box i { width: 35px; height: 35px; }
+
+        /* Dock */
+        .dock { position: absolute; bottom: 20px; left: 15px; right: 15px; height: 90px; background: rgba(255,255,255,0.25); backdrop-filter: blur(30px); border-radius: 35px; z-index: 20; display: flex; justify-content: space-around; align-items: center; padding: 0 10px; }
+
+        /* UI Elements */
+        .ios-list { background: white; border-radius: 12px; margin: 15px; overflow: hidden; }
+        .ios-item { padding: 12px 16px; border-bottom: 0.5px solid #eee; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+        .ios-item:active { background: #f0f0f0; }
+        #home-indicator { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 130px; height: 5px; background: white; border-radius: 10px; z-index: 10002; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="os-container">
-    <div id="wallpaper"></div>
+<div id="iphone">
+    <div class="wp" id="main-wp"></div>
 
-    <div id="island">
-        <div id="island-content" class="opacity-0 transition-opacity duration-300 w-full px-4"></div>
+    <div id="boot-screen">
+        <i data-lucide="apple" class="w-20 h-20 text-white fill-current"></i>
+        <div class="boot-loader"><div class="boot-progress" id="boot-p"></div></div>
     </div>
 
-    <div id="home-screen" class="relative z-10 pt-20 px-6 h-full">
-        <div class="grid grid-cols-4 gap-6" id="app-grid">
-            <div class="flex flex-col items-center gap-2" onclick="GOS.openApp('settings')">
-                <div class="w-[72px] h-[72px] bg-gradient-to-b from-gray-400 to-gray-600 rounded-[18px] flex items-center justify-center shadow-lg active:scale-90 transition">
-                    <i data-lucide="settings" class="text-white w-10 h-10"></i>
+    <div id="lock-screen">
+        <div class="text-center">
+            <h1 class="text-8xl font-bold tracking-tighter" id="lock-time">09:41</h1>
+            <p class="text-xl font-medium opacity-80" id="lock-date">пятница, 2 января</p>
+        </div>
+        <div class="flex flex-col items-center gap-4">
+            <i data-lucide="lock" class="w-6 opacity-50"></i>
+            <p class="text-xs uppercase tracking-[0.3em] animate-pulse" onclick="GOS.unlock()">Свайп вверх</p>
+        </div>
+    </div>
+
+    <div id="island" onclick="GOS.Island.expand()">
+        <div id="island-ui" class="opacity-0 w-full px-4 flex items-center justify-between text-xs font-bold"></div>
+    </div>
+
+    <div class="absolute top-0 left-0 w-1/4 h-10 z-[10005]" onclick="GOS.UI.toggleCC(false)"></div>
+    <div class="absolute top-0 right-0 w-1/4 h-10 z-[10005]" onclick="GOS.UI.toggleCC(true)"></div>
+
+    <div id="control-center">
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white/10 p-4 rounded-3xl grid grid-cols-2 gap-3">
+                <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center"><i data-lucide="wifi"></i></div>
+                <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center"><i data-lucide="bluetooth"></i></div>
+                <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center"><i data-lucide="signal"></i></div>
+                <div class="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center"><i data-lucide="plane"></i></div>
+            </div>
+            <div class="bg-white/10 p-4 rounded-3xl flex items-center justify-center h-full">
+                <div class="w-full h-full bg-white/20 rounded-2xl flex flex-col items-center justify-center">
+                    <i data-lucide="music" class="text-pink-500 mb-1"></i>
+                    <span class="text-[10px] opacity-50">Не играет</span>
                 </div>
-                <span class="text-xs font-medium">Настройки</span>
             </div>
+            <div class="h-40 bg-white/10 rounded-3xl relative overflow-hidden">
+                <div class="absolute bottom-0 w-full bg-white/80 h-3/4"></div>
+                <i data-lucide="sun" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-black/50"></i>
+            </div>
+            <div class="h-40 bg-white/10 rounded-3xl relative overflow-hidden">
+                <div class="absolute bottom-0 w-full bg-white/80 h-1/2"></div>
+                <i data-lucide="volume-2" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-black/50"></i>
+            </div>
+        </div>
+        <p class="text-center mt-10 opacity-30 text-sm">GOS Ultimate 2026</p>
+    </div>
+
+    <div id="home-screen" class="h-full pt-10">
+        <div class="home-grid" id="main-grid"></div>
+        <div class="dock">
+            <div class="icon-unit" onclick="GOS.App.launch('phone')"><div class="icon-box bg-green-500"><i data-lucide="phone" class="text-white"></i></div></div>
+            <div class="icon-unit" onclick="GOS.App.launch('safari')"><div class="icon-box bg-white"><img src="https://upload.wikimedia.org/wikipedia/commons/5/52/Safari_browser_logo.svg" class="w-10"></div></div>
+            <div class="icon-unit" onclick="GOS.App.launch('kstore')"><div class="icon-box bg-blue-600"><i data-lucide="shopping-bag" class="text-white"></i></div></div>
+            <div class="icon-unit" onclick="GOS.App.launch('music')"><div class="icon-box bg-pink-500"><i data-lucide="music" class="text-white"></i></div></div>
         </div>
     </div>
 
-    <div id="app-runtime"></div>
+    <div id="app-layer"></div>
 
-    <div id="admin-panel" class="absolute inset-0 z-[10000] bg-black/90 backdrop-blur-3xl p-8 hidden flex-col">
-        <div class="flex justify-between items-center mb-10">
-            <h2 class="text-2xl font-bold">Developer Console</h2>
-            <button onclick="GOS.closeAdmin()" class="text-blue-500">Закрыть</button>
+    <div id="admin-panel" class="absolute inset-0 z-[11000] bg-black/95 p-8 hidden flex-col">
+        <h2 class="text-2xl font-bold mb-6">Developer Hub</h2>
+        <div class="space-y-4">
+            <input id="upd-v" placeholder="Версия (напр. 26.2.0)" class="w-full bg-white/10 p-4 rounded-xl outline-none">
+            <textarea id="upd-t" placeholder="Описание изменений..." class="w-full bg-white/10 p-4 rounded-xl outline-none h-32"></textarea>
+            <button onclick="GOS.System.pushUpdate()" class="w-full bg-blue-600 py-4 rounded-xl font-bold">ОТПРАВИТЬ ОБНОВЛЕНИЕ</button>
         </div>
-        <div class="space-y-6">
-            <div>
-                <label class="text-xs text-gray-500 uppercase ml-2">Версия прошивки</label>
-                <input id="upd-v" type="text" placeholder="26.1.0" class="w-full bg-white/10 p-4 rounded-2xl mt-1 outline-none">
-            </div>
-            <div>
-                <label class="text-xs text-gray-500 uppercase ml-2">Что нового</label>
-                <textarea id="upd-t" placeholder="Опишите изменения..." class="w-full bg-white/10 p-4 rounded-2xl mt-1 outline-none h-32"></textarea>
-            </div>
-            <button onclick="GOS.pushUpdate()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold active:scale-95 transition">ОТПРАВИТЬ ОБНОВЛЕНИЕ</button>
-        </div>
+        <button onclick="GOS.UI.closeAdmin()" class="mt-auto text-blue-500">Закрыть</button>
     </div>
 
-    <div id="home-bar" onclick="GOS.goHome()"></div>
+    <div id="home-indicator" onclick="GOS.App.close()"></div>
 </div>
+
 <script>
 const GOS = {
-    version: "26.0.0",
-    updatePending: null, // Сюда прилетит обновление от админа
-    adminClicks: 0,
+    version: "26.0.4",
+    isLocked: true,
     activeApp: null,
+    updateData: null,
+    adminClicks: 0,
+    apps: [
+        { id: 'settings', name: 'Настройки', icon: 'settings', color: 'bg-gray-500' },
+        { id: 'maps', name: 'Карты', icon: 'map', color: 'bg-green-600' },
+        { id: 'photos', name: 'Фото', icon: 'image', color: 'bg-white text-blue-400' },
+        { id: 'weather', name: 'Погода', icon: 'cloud-sun', color: 'bg-sky-400' },
+        { id: 'google', name: 'Google', icon: 'search', color: 'bg-white text-red-500' }
+    ],
 
     init() {
+        this.renderGrid();
+        this.updateTime();
+        setInterval(() => this.updateTime(), 1000);
         lucide.createIcons();
-        this.statusClock();
-        setInterval(() => this.statusClock(), 1000);
     },
 
-    statusClock() {
+    updateTime() {
         const now = new Date();
-        const timeStr = now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
-        // Можно добавить вывод времени в статус бар, если захочешь
+        const time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        const date = now.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+        document.getElementById('lock-time').innerText = time;
+        document.getElementById('lock-date').innerText = date;
     },
 
-    openApp(id) {
-        this.activeApp = id;
-        document.body.classList.add('app-open');
-        const runtime = document.getElementById('app-runtime');
-        
-        let appWin = document.getElementById('win-' + id);
-        if(!appWin) {
-            appWin = document.createElement('div');
-            appWin.id = 'win-' + id;
-            appWin.className = 'window';
-            appWin.innerHTML = this.renderView(id);
-            runtime.appendChild(appWin);
-        }
-
-        setTimeout(() => {
-            appWin.classList.add('active');
-            lucide.createIcons();
-        }, 10);
+    unlock() {
+        gsap.to("#lock-screen", { y: "-100%", duration: 0.6, ease: "power4.inOut" });
+        this.isLocked = false;
     },
 
-    goHome() {
-        if(!this.activeApp) return;
-        const win = document.getElementById('win-' + this.activeApp);
-        win.classList.remove('active');
-        document.body.classList.remove('app-open');
-        this.activeApp = null;
-    },
-
-    // --- ЛОГИКА ОБНОВЛЕНИЙ ---
-    
-    handleAdminClick() {
-        this.adminClicks++;
-        if(this.adminClicks >= 5) {
-            document.getElementById('admin-panel').style.display = 'flex';
-            this.adminClicks = 0;
-        }
-    },
-
-    closeAdmin() {
-        document.getElementById('admin-panel').style.display = 'none';
-    },
-
-    pushUpdate() {
-        const v = document.getElementById('upd-v').value;
-        const t = document.getElementById('upd-t').value;
-        if(!v || !t) return alert("Заполни данные!");
-
-        this.updatePending = { version: v, text: t };
-        this.closeAdmin();
-        
-        // Показываем уведомление в Island
-        this.showIslandNotif("Обновление ПО", `Доступна GOS ${v}`);
-        
-        // Если открыты настройки - перерисовываем
-        if(this.activeApp === 'settings') {
-            document.getElementById('win-settings').innerHTML = this.renderView('settings');
-            lucide.createIcons();
-        }
-    },
-
-    showIslandNotif(title, body) {
-        const island = document.getElementById('island');
-        const content = document.getElementById('island-content');
-        island.classList.add('notif');
-        content.classList.remove('opacity-0');
-        content.innerHTML = `
-            <div class="flex items-center gap-4 h-full">
-                <div class="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg">
-                    <i data-lucide="download-cloud" class="text-white"></i>
-                </div>
-                <div>
-                    <p class="text-white font-bold text-sm">${title}</p>
-                    <p class="text-white/60 text-xs">${body}</p>
-                </div>
+    renderGrid() {
+        const grid = document.getElementById('main-grid');
+        grid.innerHTML = this.apps.map(app => `
+            <div class="icon-unit" onclick="GOS.App.launch('${app.id}')">
+                <div class="icon-box ${app.color}">${app.url ? `<img src="${app.icon_url}" class="w-full h-full rounded-2xl">` : `<i data-lucide="${app.icon}"></i>`}</div>
+                <span class="text-[11px] font-medium">${app.name}</span>
             </div>
-        `;
+        `).join('');
         lucide.createIcons();
-        setTimeout(() => {
-            island.classList.remove('notif');
-            content.classList.add('opacity-0');
-        }, 5000);
     },
 
-    startUpdate() {
-        const container = document.getElementById('update-view-content');
-        container.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-20 text-center">
-                <div class="spinner mb-6"></div>
-                <h3 class="font-bold text-xl">Подготовка обновления...</h3>
-                <p class="text-gray-500 text-sm mt-2">GOS ${this.updatePending.version} скачивается</p>
-            </div>
-        `;
-        
-        setTimeout(() => {
-            this.version = this.updatePending.version;
-            this.updatePending = null;
-            this.goHome();
-            setTimeout(() => alert("Система обновлена до версии " + this.version), 500);
-        }, 5000);
+    UI: {
+        toggleCC(open) {
+            document.getElementById('control-center').classList.toggle('open', open);
+        },
+        closeAdmin() { document.getElementById('admin-panel').style.display = 'none'; }
     },
 
-    renderView(id) {
-        if(id === 'settings') {
-            return `
-                <div class="h-full bg-[#F2F2F7] overflow-y-auto">
-                    <div class="pt-16 px-6 mb-6">
-                        <h1 class="text-4xl font-extrabold">Настройки</h1>
+    Island: {
+        expand() {
+            const isl = document.getElementById('island');
+            isl.classList.toggle('expanded');
+        },
+        notify(title, msg) {
+            const isl = document.getElementById('island');
+            const ui = document.getElementById('island-ui');
+            isl.classList.add('expanded');
+            ui.classList.remove('opacity-0');
+            ui.innerHTML = `<div class="flex items-center gap-3"><div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center"><i data-lucide="bell" class="w-5"></i></div>
+            <div><p>${title}</p><p class="opacity-50 text-[10px]">${msg}</p></div></div>`;
+            lucide.createIcons();
+            setTimeout(() => { isl.classList.remove('expanded'); ui.classList.add('opacity-0'); }, 4000);
+        }
+    },
+
+    App: {
+        launch(id) {
+            const layer = document.getElementById('app-layer');
+            let win = document.getElementById(`win-${id}`);
+            if(!win) {
+                win = document.createElement('div');
+                win.id = `win-${id}`;
+                win.className = 'app-win';
+                win.innerHTML = GOS.Templates.get(id);
+                layer.appendChild(win);
+            }
+            document.body.classList.add('blur-bg');
+            GOS.activeApp = id;
+            setTimeout(() => { win.classList.add('active'); lucide.createIcons(); }, 10);
+        },
+        close() {
+            if(!GOS.activeApp) return;
+            const win = document.getElementById(`win-${GOS.activeApp}`);
+            win.classList.remove('active');
+            document.body.classList.remove('blur-bg');
+            setTimeout(() => { win.remove(); GOS.activeApp = null; }, 500);
+        },
+        installApp() {
+            const name = document.getElementById('store-n').value;
+            const url = document.getElementById('store-u').value;
+            if(!name || !url) return alert("Введите данные");
+            
+            GOS.Island.notify("K-Store", `Загрузка ${name}...`);
+            setTimeout(() => {
+                GOS.apps.push({ id: name.toLowerCase(), name: name, url: url, icon_url: `https://www.google.com/s2/favicons?sz=128&domain=${url}`, color: 'bg-white' });
+                GOS.renderGrid();
+                GOS.App.close();
+            }, 2000);
+        }
+    },
+
+    System: {
+        pushUpdate() {
+            const v = document.getElementById('upd-v').value;
+            const t = document.getElementById('upd-t').value;
+            GOS.updateData = { v, t };
+            GOS.UI.closeAdmin();
+            GOS.Island.notify("Обновление ПО", `Доступна версия ${v}`);
+        },
+        reboot() {
+            GOS.App.close();
+            const boot = document.getElementById('boot-screen');
+            const bar = document.getElementById('boot-p');
+            boot.style.display = 'flex';
+            let p = 0;
+            const int = setInterval(() => {
+                p += Math.random() * 5;
+                bar.style.width = p + "%";
+                if(p >= 100) {
+                    clearInterval(int);
+                    location.reload();
+                }
+            }, 150);
+        }
+    },
+
+    Templates: {
+        get(id) {
+            if(id === 'settings') return `
+                <div class="h-full bg-[#F2F2F7]">
+                    <div class="pt-16 px-6 mb-6 flex justify-between items-end">
+                        <h1 class="text-4xl font-bold">Настройки</h1>
                     </div>
-
-                    <div class="ios-list" onclick="GOS.handleAdminClick()">
+                    <div class="ios-list" onclick="GOS.adminClicks++; if(GOS.adminClicks>=5){document.getElementById('admin-panel').style.display='flex'; GOS.adminClicks=0;}">
                         <div class="ios-item py-4">
                             <div class="flex items-center gap-4">
-                                <div class="w-14 h-14 bg-gradient-to-tr from-gray-400 to-gray-200 rounded-full flex items-center justify-center text-white text-2xl font-bold">G</div>
-                                <div>
-                                    <h3 class="text-lg font-semibold">G-Developer</h3>
-                                    <p class="text-xs text-gray-500">Apple ID, iCloud+, Контент и покупки</p>
-                                </div>
+                                <div class="w-14 h-14 bg-gradient-to-tr from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-2xl">D</div>
+                                <div><h3 class="font-bold text-lg">Developer</h3><p class="text-xs text-gray-400">G-ID, Cloud & Update</p></div>
                             </div>
-                            <i data-lucide="chevron-right" class="text-gray-300"></i>
                         </div>
                     </div>
-
                     <div class="ios-list">
-                        <div class="ios-item" onclick="GOS.openApp('software-update')">
-                            <div class="flex items-center gap-3">
-                                <div class="w-7 h-7 bg-gray-500 rounded-md flex items-center justify-center">
-                                    <i data-lucide="refresh-cw" class="text-white w-4 h-4"></i>
-                                </div>
-                                <span class="text-[17px]">Обновление ПО</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                ${this.updatePending ? '<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">1</span>' : ''}
-                                <i data-lucide="chevron-right" class="text-gray-300 w-5 h-5"></i>
-                            </div>
+                        <div class="ios-item" onclick="GOS.App.launch('update-page')">
+                            <div class="flex items-center gap-3"><div class="w-8 h-8 bg-gray-500 rounded-lg flex items-center justify-center"><i data-lucide="refresh-cw" class="text-white w-5"></i></div><span>Обновление ПО</span></div>
+                            <div class="flex items-center gap-2">${GOS.updateData ? '<span class="bg-red-500 text-white text-[10px] font-bold px-2 rounded-full">1</span>' : ''}<i data-lucide="chevron-right" class="text-gray-300"></i></div>
                         </div>
                     </div>
-                </div>
-            `;
-        }
-
-        if(id === 'software-update') {
-            return `
-                <div class="h-full bg-white overflow-y-auto">
-                    <div class="pt-14 px-4 flex items-center gap-2 mb-8">
-                        <button onclick="GOS.openApp('settings')" class="text-blue-500 flex items-center">
-                            <i data-lucide="chevron-left"></i> Настройки
-                        </button>
-                    </div>
-                    
-                    <div class="px-8" id="update-view-content">
-                        <div class="flex flex-col items-center mb-10">
-                            <i data-lucide="refresh-cw" class="w-16 h-16 text-gray-200 mb-4"></i>
-                            <h2 class="text-2xl font-bold">GOS ${this.version}</h2>
-                            <p class="text-gray-500">Ваше ПО актуально</p>
+                </div>`;
+            
+            if(id === 'update-page') return `
+                <div class="h-full bg-white p-8 pt-20">
+                    <h2 class="text-3xl font-bold mb-2">Обновление ПО</h2>
+                    <p class="text-gray-400 mb-8">GOS ${GOS.version}</p>
+                    ${GOS.updateData ? `
+                        <div class="bg-blue-50 rounded-3xl p-6 mb-10">
+                            <h3 class="font-bold text-blue-600 mb-2 underline text-xl">GOS ${GOS.updateData.v}</h3>
+                            <p class="text-sm text-gray-600 mb-6">${GOS.updateData.t}</p>
+                            <button onclick="GOS.System.reboot()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold">Обновить сейчас</button>
                         </div>
+                    ` : '<div class="text-center py-20 text-gray-300"><i data-lucide="check-circle" class="w-20 h-20 mx-auto mb-4 opacity-20"></i><p>Ваше ПО актуально</p></div>'}
+                </div>`;
 
-                        ${this.updatePending ? `
-                            <div class="bg-gray-50 rounded-3xl p-6 border border-gray-100">
-                                <p class="text-blue-500 font-bold text-xs uppercase mb-2">Доступно обновление</p>
-                                <h3 class="text-2xl font-bold mb-4">GOS ${this.updatePending.version}</h3>
-                                <div class="text-sm text-gray-600 space-y-2 mb-8">
-                                    ${this.updatePending.text.replace(/\n/g, '<br>')}
-                                </div>
-                                <button onclick="GOS.startUpdate()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold active:bg-blue-700 transition">Обновить сейчас</button>
-                            </div>
-                        ` : ''}
+            if(id === 'kstore') return `
+                <div class="h-full bg-white p-6 pt-16">
+                    <h1 class="text-4xl font-bold mb-8">K-Store</h1>
+                    <div class="bg-gray-100 rounded-3xl p-6 mb-6">
+                        <h3 class="font-bold mb-4">Выложить приложение</h3>
+                        <input id="store-n" placeholder="Название" class="w-full mb-3 p-3 rounded-xl border-none outline-none">
+                        <input id="store-u" placeholder="https://..." class="w-full mb-4 p-3 rounded-xl border-none outline-none">
+                        <button onclick="GOS.App.installApp()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">Опубликовать</button>
                     </div>
-                </div>
-            `;
+                </div>`;
+
+            if(id === 'google') return `<div class="h-full pt-12"><iframe src="https://www.google.com/search?igu=1" class="w-full h-full border-none"></iframe></div>`;
+
+            const webApp = GOS.apps.find(a => a.id === id);
+            if(webApp && webApp.url) return `<div class="h-full pt-12"><iframe src="${webApp.url}" class="w-full h-full border-none"></iframe></div>`;
+
+            return `<div class="h-full flex flex-col items-center justify-center p-10 text-center"><i data-lucide="code" class="w-20 h-20 text-gray-200 mb-4"></i><h2 class="text-2xl font-bold">${id.toUpperCase()}</h2><p class="text-gray-400">Приложение в разработке</p></div>`;
         }
     }
 };
